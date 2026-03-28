@@ -11,10 +11,9 @@ const PORT = process.env.PORT || 3000;
 const DB_FILE = path.join(__dirname, 'banco.db');
 
 // ── Mercado Pago ───────────────────────────────────────────
-const MP_ACCESS_TOKEN  = process.env.MP_ACCESS_TOKEN  || 'APP_USR-460981285996431-032818-00692b024b5a6ec3db98a3e0645429d3-1651166060';
-const MP_WEBHOOK_SECRET= process.env.MP_WEBHOOK_SECRET|| '06611dddba6e420e383464cb08e693856ff24d9bfd4038b628ceaf41f6872c07';
-// URL pública do Railway — usada no webhook do MP
-const BASE_URL = process.env.BASE_URL || 'https://ngexpress.up.railway.app';
+const MP_ACCESS_TOKEN   = process.env.MP_ACCESS_TOKEN   || 'APP_USR-460981285996431-032818-00692b024b5a6ec3db98a3e0645429d3-1651166060';
+const MP_WEBHOOK_SECRET = process.env.MP_WEBHOOK_SECRET || '06611dddba6e420e383464cb08e693856ff24d9bfd4038b628ceaf41f6872c07';
+const BASE_URL          = process.env.BASE_URL          || 'chatbotng-production.up.railway.app';
 
 app.use(cors({ origin: '*' }));
 app.use(express.json({ limit: '25mb' }));
@@ -22,8 +21,8 @@ app.use(express.static(path.join(__dirname, 'public')));
 
 // ── Configuração de preços ─────────────────────────────────
 const PRICING_CONFIG = {
-    valorMinimoAte7km: { moto: 15.00, carro: 50.00 },
-    valorPorKm:        { moto: 1.80,  carro: 3.50  },
+    valorMinimoAte7km: { moto: 15.00 },
+    valorPorKm:        { moto: 1.80 },
     limiteKmMinimo:    7
 };
 
@@ -64,8 +63,29 @@ async function abrirBanco() {
         atualizada INTEGER
     )`);
 
-    // Adiciona coluna mp_payment_id se banco já existia sem ela
-    try { DB.run(`ALTER TABLE conversas ADD COLUMN mp_payment_id TEXT DEFAULT ''`); } catch (_) {}
+    // ── Migração: garante que todas as colunas existem em bancos antigos ──
+    const migracoes = [
+        `ALTER TABLE conversas ADD COLUMN mp_payment_id TEXT DEFAULT ''`,
+        `ALTER TABLE conversas ADD COLUMN distancia_km REAL DEFAULT 0`,
+        `ALTER TABLE conversas ADD COLUMN veiculo TEXT DEFAULT 'moto'`,
+        `ALTER TABLE conversas ADD COLUMN aguard_pag INTEGER DEFAULT 0`,
+        `ALTER TABLE conversas ADD COLUMN pag_conf INTEGER DEFAULT 0`,
+        `ALTER TABLE conversas ADD COLUMN arquivada INTEGER DEFAULT 0`,
+        `ALTER TABLE conversas ADD COLUMN user_type TEXT DEFAULT ''`,
+        `ALTER TABLE conversas ADD COLUMN atendente TEXT DEFAULT ''`,
+        `ALTER TABLE conversas ADD COLUMN pix TEXT DEFAULT ''`,
+        `ALTER TABLE conversas ADD COLUMN coleta_cidade TEXT DEFAULT ''`,
+        `ALTER TABLE conversas ADD COLUMN coleta_end TEXT DEFAULT ''`,
+        `ALTER TABLE conversas ADD COLUMN entrega_cidade TEXT DEFAULT ''`,
+        `ALTER TABLE conversas ADD COLUMN entrega_end TEXT DEFAULT ''`,
+        `ALTER TABLE conversas ADD COLUMN dest_nome TEXT DEFAULT ''`,
+        `ALTER TABLE conversas ADD COLUMN dest_tel TEXT DEFAULT ''`,
+        `ALTER TABLE conversas ADD COLUMN motoboy_regiao TEXT DEFAULT ''`,
+        `ALTER TABLE conversas ADD COLUMN ultima TEXT DEFAULT ''`,
+    ];
+    for (const sql of migracoes) {
+        try { DB.run(sql); } catch (_) { /* coluna já existe, ignora */ }
+    }
 
     DB.run(`CREATE TABLE IF NOT EXISTS msgs (
         id TEXT PRIMARY KEY,
@@ -112,10 +132,10 @@ function todos(sql, params = []) {
 function agora() { return Date.now(); }
 
 function calcularPreco(distanciaKm, veiculo = 'moto') {
-    const km = parseFloat(distanciaKm) || 0;
-    const limite    = PRICING_CONFIG.limiteKmMinimo;
-    const valorMin  = PRICING_CONFIG.valorMinimoAte7km[veiculo] || 15.00;
-    const valorKm   = PRICING_CONFIG.valorPorKm[veiculo] || 1.80;
+    const km       = parseFloat(distanciaKm) || 0;
+    const limite   = PRICING_CONFIG.limiteKmMinimo;
+    const valorMin = PRICING_CONFIG.valorMinimoAte7km[veiculo] || 15.00;
+    const valorKm  = PRICING_CONFIG.valorPorKm[veiculo] || 1.80;
     if (km <= limite) return valorMin;
     return valorMin + ((km - limite) * valorKm);
 }
@@ -126,11 +146,11 @@ function montar(c) {
     const arquivos  = todos('SELECT id,nome,mime,dados,ts FROM arquivos WHERE conv_id=? ORDER BY ts ASC', [c.id]);
     return {
         id: c.id,
-        aberta: !!c.aberta,
-        lida: !!c.lida,
-        arquivada: !!c.arquivada,
-        ultima: c.ultima,
-        ts: c.atualizada,
+        aberta:   !!c.aberta,
+        lida:     !!c.lida,
+        arquivada:!!c.arquivada,
+        ultima:   c.ultima,
+        ts:       c.atualizada,
         msgs: mensagens.map(m => ({ id: m.id, tipo: m.tipo, texto: m.texto, atendente: m.atendente, ts: m.ts })),
         arquivos: arquivos.map(a => ({ id: a.id, nome: a.nome, mime: a.mime, dados: a.dados, ts: a.ts })),
         info: {
@@ -139,7 +159,7 @@ function montar(c) {
             valor: c.valor, pixPayload: c.pix,
             mpPaymentId: c.mp_payment_id,
             aguardandoConfirmacao: !!c.aguard_pag,
-            pagamentoConfirmado: !!c.pag_conf,
+            pagamentoConfirmado:   !!c.pag_conf,
             distancia: c.distancia_km, veiculo: c.veiculo,
             coleta:      { cidade: c.coleta_cidade,  endereco: c.coleta_end  },
             entrega:     { cidade: c.entrega_cidade, endereco: c.entrega_end },
@@ -149,7 +169,7 @@ function montar(c) {
     };
 }
 
-// ── Helper: chama API do Mercado Pago ──────────────────────
+// ── Helper Mercado Pago ────────────────────────────────────
 function mpRequest(method, endpoint, body) {
     return new Promise((resolve, reject) => {
         const data = body ? JSON.stringify(body) : null;
@@ -158,19 +178,18 @@ function mpRequest(method, endpoint, body) {
             path:     endpoint,
             method,
             headers: {
-                'Authorization': `Bearer ${MP_ACCESS_TOKEN}`,
-                'Content-Type':  'application/json',
+                'Authorization':    `Bearer ${MP_ACCESS_TOKEN}`,
+                'Content-Type':     'application/json',
                 'X-Idempotency-Key': uuid(),
             }
         };
         if (data) options.headers['Content-Length'] = Buffer.byteLength(data);
-
         const req = https.request(options, res => {
             let raw = '';
             res.on('data', chunk => raw += chunk);
             res.on('end', () => {
                 try { resolve({ status: res.statusCode, body: JSON.parse(raw) }); }
-                catch (e) { reject(new Error('Resposta inválida do MP: ' + raw.slice(0, 100))); }
+                catch (e) { reject(new Error('Resposta inválida MP: ' + raw.slice(0, 100))); }
             });
         });
         req.on('error', reject);
@@ -252,9 +271,9 @@ app.patch('/api/conv/:id', (req, res) => {
 // Deletar conversa
 app.delete('/api/conv/:id', (req, res) => {
     const id = req.params.id;
-    rodar('DELETE FROM msgs     WHERE conv_id=?', [id]);
-    rodar('DELETE FROM arquivos WHERE conv_id=?', [id]);
-    rodar('DELETE FROM conversas WHERE id=?',     [id]);
+    rodar('DELETE FROM msgs      WHERE conv_id=?', [id]);
+    rodar('DELETE FROM arquivos  WHERE conv_id=?', [id]);
+    rodar('DELETE FROM conversas WHERE id=?',      [id]);
     res.json({ ok: true });
 });
 
@@ -274,57 +293,51 @@ app.get('/api/historico', (req, res) => {
 // Calcular preço
 app.post('/api/calcular', (req, res) => {
     const { distancia, veiculo } = req.body;
-    const km    = parseFloat(distancia) || 0;
-    const preco = calcularPreco(km, veiculo || 'moto');
-    res.json({ distancia: km, valor: preco, veiculo: veiculo || 'moto' });
+    const preco = calcularPreco(parseFloat(distancia) || 0, veiculo || 'moto');
+    res.json({ distancia: parseFloat(distancia) || 0, valor: preco, veiculo: veiculo || 'moto' });
 });
 
-// ── MERCADO PAGO — Gerar cobrança PIX ─────────────────────
+// ── PIX — Gerar cobrança no Mercado Pago ──────────────────
 app.post('/api/pix/criar', async (req, res) => {
-    const { convId, valor, nomeCliente, cpfCliente } = req.body;
+    const { convId, valor, nomeCliente } = req.body;
     if (!convId || !valor) return res.status(400).json({ erro: 'convId e valor obrigatórios' });
 
     try {
         const body = {
             transaction_amount: parseFloat(parseFloat(valor).toFixed(2)),
-            description:        `Entrega N&G Express - Pedido ${convId.slice(-6).toUpperCase()}`,
+            description:        `Entrega N&G Express #${convId.slice(-6).toUpperCase()}`,
             payment_method_id:  'pix',
             payer: {
-                email:           'cliente@ngexpress.com.br', // email genérico pois não coletamos
-                first_name:      nomeCliente || 'Cliente',
-                last_name:       'N&G Express',
-                identification:  {
-                    type:   'CPF',
-                    number: cpfCliente || '00000000000' // sem CPF usa genérico
-                }
+                email:      'cliente@ngexpress.com.br',
+                first_name: nomeCliente || 'Cliente',
+                last_name:  'NGExpress',
+                identification: { type: 'CPF', number: '00000000000' }
             },
-            notification_url: `${BASE_URL}/api/pix/webhook`,
+            notification_url:   `${BASE_URL}/api/pix/webhook`,
             external_reference: convId,
         };
 
         const resp = await mpRequest('POST', '/v1/payments', body);
 
         if (resp.status !== 201) {
-            console.error('❌ Erro MP:', JSON.stringify(resp.body));
-            return res.status(502).json({ erro: 'Erro ao criar cobrança no Mercado Pago', detalhe: resp.body });
+            console.error('❌ Erro MP criar PIX:', JSON.stringify(resp.body));
+            return res.status(502).json({ erro: 'Erro no Mercado Pago', detalhe: resp.body });
         }
 
         const pix = resp.body.point_of_interaction?.transaction_data;
-        if (!pix?.qr_code) {
-            return res.status(502).json({ erro: 'Mercado Pago não retornou QR Code PIX' });
-        }
+        if (!pix?.qr_code) return res.status(502).json({ erro: 'MP não retornou QR Code' });
 
-        // Salva o payment_id na conversa para rastrear o webhook
+        // Salva payment_id e payload na conversa
         rodar(
             'UPDATE conversas SET mp_payment_id=?, pix=?, aguard_pag=1, atualizada=? WHERE id=?',
             [String(resp.body.id), pix.qr_code, agora(), convId]
         );
 
         res.json({
-            paymentId:  resp.body.id,
-            qrCode:     pix.qr_code,         // string copia e cola
-            qrCodeBase64: pix.qr_code_base64, // imagem base64 (opcional)
-            valor:      resp.body.transaction_amount,
+            paymentId:    resp.body.id,
+            qrCode:       pix.qr_code,
+            qrCodeBase64: pix.qr_code_base64 || null,
+            valor:        resp.body.transaction_amount,
         });
 
     } catch (err) {
@@ -333,16 +346,14 @@ app.post('/api/pix/criar', async (req, res) => {
     }
 });
 
-// ── MERCADO PAGO — Webhook de notificação ─────────────────
+// ── PIX — Webhook do Mercado Pago ─────────────────────────
 app.post('/api/pix/webhook', async (req, res) => {
-    // Responde 200 imediatamente para o MP não reenviar
-    res.sendStatus(200);
+    res.sendStatus(200); // responde imediatamente
 
     try {
         const { type, data } = req.body;
         if (type !== 'payment' || !data?.id) return;
 
-        // Busca o pagamento no MP para confirmar status
         const resp = await mpRequest('GET', `/v1/payments/${data.id}`, null);
         if (resp.status !== 200) return;
 
@@ -355,36 +366,31 @@ app.post('/api/pix/webhook', async (req, res) => {
         const c = um('SELECT * FROM conversas WHERE id=?', [convId]);
         if (!c || c.pag_conf) return; // já confirmado
 
-        // Marca pagamento como confirmado
         rodar(
             'UPDATE conversas SET pag_conf=1, aguard_pag=0, lida=0, atualizada=? WHERE id=?',
             [agora(), convId]
         );
 
-        // Insere mensagem automática de confirmação
-        const msgId = uuid();
-        const ts    = agora();
+        const msgId = uuid(), ts = agora();
         rodar(
             'INSERT INTO msgs (id,conv_id,tipo,texto,atendente,ts) VALUES (?,?,?,?,?,?)',
             [msgId, convId, 'atendente',
-             '✅ Pagamento confirmado pelo Mercado Pago! Sua entrega foi registrada. Em breve nosso motoboy irá buscar seu pedido. 🚚',
+             '✅ Pagamento confirmado! Sua entrega foi registrada. Em breve nosso motoboy irá buscar seu pedido. 🚚',
              'Sistema', ts]
         );
-        rodar('UPDATE conversas SET ultima=?,atualizada=? WHERE id=?',
-            ['✅ Pagamento confirmado!', ts, convId]);
+        rodar('UPDATE conversas SET ultima=?,atualizada=? WHERE id=?', ['✅ Pagamento confirmado!', ts, convId]);
 
-        console.log(`✅ PIX confirmado automaticamente — conversa ${convId}`);
+        console.log(`✅ PIX aprovado automaticamente — conversa ${convId}`);
     } catch (err) {
-        console.error('❌ Erro webhook MP:', err.message);
+        console.error('❌ Erro webhook:', err.message);
     }
 });
 
-// ── MERCADO PAGO — Consultar status manualmente ───────────
+// ── PIX — Consultar status manualmente ────────────────────
 app.get('/api/pix/status/:convId', async (req, res) => {
     const c = um('SELECT * FROM conversas WHERE id=?', [req.params.convId]);
     if (!c) return res.status(404).json({ erro: 'não encontrada' });
     if (!c.mp_payment_id) return res.json({ status: 'sem_cobranca' });
-
     try {
         const resp = await mpRequest('GET', `/v1/payments/${c.mp_payment_id}`, null);
         if (resp.status !== 200) return res.status(502).json({ erro: 'Erro ao consultar MP' });
@@ -398,16 +404,13 @@ app.get('/api/pix/status/:convId', async (req, res) => {
 app.post('/api/conv/:id/msgs', (req, res) => {
     const { tipo, texto, atendente } = req.body;
     const conv_id = req.params.id;
-    const id = uuid();
-    const ts = agora();
+    const id = uuid(), ts = agora();
     rodar('INSERT INTO msgs (id,conv_id,tipo,texto,atendente,ts) VALUES (?,?,?,?,?,?)',
         [id, conv_id, tipo, texto || '', atendente || '', ts]);
     if (tipo === 'user') {
-        rodar('UPDATE conversas SET ultima=?,atualizada=?,lida=0 WHERE id=?',
-            [(texto || '').substring(0, 80), ts, conv_id]);
+        rodar('UPDATE conversas SET ultima=?,atualizada=?,lida=0 WHERE id=?', [(texto || '').substring(0, 80), ts, conv_id]);
     } else {
-        rodar('UPDATE conversas SET ultima=?,atualizada=? WHERE id=?',
-            [(texto || '').substring(0, 80), ts, conv_id]);
+        rodar('UPDATE conversas SET ultima=?,atualizada=? WHERE id=?', [(texto || '').substring(0, 80), ts, conv_id]);
     }
     res.json({ id, ts, ok: true });
 });
@@ -416,18 +419,15 @@ app.post('/api/conv/:id/msgs', (req, res) => {
 app.post('/api/conv/:id/arq', (req, res) => {
     const { nome, mime, dados } = req.body;
     if (!dados) return res.status(400).json({ erro: 'dados obrigatório' });
-    const id = uuid();
-    const ts = agora();
+    const id = uuid(), ts = agora();
     rodar('INSERT INTO arquivos (id,conv_id,nome,mime,dados,ts) VALUES (?,?,?,?,?,?)',
         [id, req.params.id, nome || 'arquivo', mime || 'image/jpeg', dados, ts]);
-    rodar('UPDATE conversas SET ultima=?,atualizada=?,lida=0 WHERE id=?',
-        ['📎 Comprovante enviado', ts, req.params.id]);
+    rodar('UPDATE conversas SET ultima=?,atualizada=?,lida=0 WHERE id=?', ['📎 Comprovante enviado', ts, req.params.id]);
     res.json({ id, ts, ok: true });
 });
 
 app.get('/api/conv/:id/arq', (req, res) => {
-    const arqs = todos('SELECT * FROM arquivos WHERE conv_id=? ORDER BY ts ASC', [req.params.id]);
-    res.json(arqs);
+    res.json(todos('SELECT * FROM arquivos WHERE conv_id=? ORDER BY ts ASC', [req.params.id]));
 });
 
 // ── Health ─────────────────────────────────────────────────
@@ -450,7 +450,7 @@ abrirBanco().then(() => {
         console.log(`📡 http://localhost:${PORT}`);
         console.log(`👤 Cliente: http://localhost:${PORT}/chatbot-cliente.html`);
         console.log(`👩‍💼 Painel:  http://localhost:${PORT}/painel-atendentes.html`);
-        console.log(`💳 PIX MP:  ${BASE_URL}/api/pix/webhook`);
+        console.log(`💳 Webhook: ${BASE_URL}/api/pix/webhook`);
         console.log('');
     });
 });
