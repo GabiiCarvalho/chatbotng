@@ -100,57 +100,31 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
 .cthumb div{font-size:.58rem;color:var(--mt);padding:2px 4px;background:var(--card);text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:64px}
 .cmsg{flex:1;overflow-y:auto;padding:14px 16px;display:flex;flex-direction:column;gap:6px}
 
-/* ── Mensagens — correção de alinhamento ── */
-.mp{
-  display:flex;
-  flex-direction:column;
-  width:100%;          /* essencial: sem isso o flex-end não tem espaço */
-  animation:su .2s ease;
-}
+/* ── Mensagens ── */
+.mp{ display:flex; flex-direction:column; width:100%; animation:su .2s ease; }
 @keyframes su{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
 
-/* Cliente e bot — esquerda */
+/* Cliente → esquerda */
 .mbot{ align-items:flex-start; }
+.musr{ align-items:flex-start; }
 
-/* Atendente — direita */
+/* Atendente e Bot → direita */
 .mat{ align-items:flex-end; }
 
-.bp{
-  max-width:min(72%,460px);
-  padding:8px 12px;
-  border-radius:14px;
-  font-size:.82rem;
-  line-height:1.5;
-  word-break:break-word;
-}
+.bp{ max-width:min(72%,460px); padding:8px 12px; border-radius:14px; font-size:.82rem; line-height:1.5; word-break:break-word; }
 
-/* Balão do bot (mensagens automáticas) — esquerda, cinza */
-.mbot .bp{
-  background:var(--card);
-  color:var(--tx);
-  border-bottom-left-radius:4px;
-}
+/* Balão cliente (user) — verde escuro, esquerda */
+.musr .bp{ background:#1a3328; color:#8fd4a8; border-bottom-left-radius:4px; }
 
-/* Balão do cliente (usuário real) — esquerda, verde escuro */
-.musr .bp{
-  background:#1a3328;
-  color:#8fd4a8;
-  border-bottom-left-radius:4px;
-}
+/* Balão bot/atendente — verde WhatsApp, direita */
+.mat  .bp{ background:var(--v); color:#fff; border-bottom-right-radius:4px; }
 
-/* Balão do atendente — direita, verde WhatsApp */
-.mat .bp{
-  background:var(--v);
-  color:#fff;
-  border-bottom-right-radius:4px;
-}
-
-.hp{ font-size:.58rem;color:var(--mt);margin-top:3px;padding:0 2px; }
+.hp  { font-size:.58rem; color:var(--mt); margin-top:3px; padding:0 2px; }
 
 /* Rótulos de remetente */
-.lbot { font-size:.58rem;color:var(--mt);   margin-bottom:2px;padding:0 2px;font-weight:600; }
-.lusr { font-size:.58rem;color:var(--v3);   margin-bottom:2px;padding:0 2px;font-weight:600; }
-.lat2 { font-size:.58rem;color:#82c8f0;     margin-bottom:2px;padding:0 2px;font-weight:600; }
+.lusr { font-size:.58rem; color:var(--v3);  margin-bottom:2px; padding:0 2px; font-weight:600; }
+.lat2 { font-size:.58rem; color:#82c8f0;    margin-bottom:2px; padding:0 2px; font-weight:600; }
+.lbot { font-size:.58rem; color:#82c8f0;    margin-bottom:2px; padding:0 2px; font-weight:600; }
 
 .imgmsg{max-width:min(200px,100%);max-height:160px;object-fit:cover;border-radius:10px;cursor:pointer;display:block;margin-top:4px}
 .ci{background:var(--pan);border-top:1px solid var(--brd);padding:10px 14px;display:flex;gap:8px;align-items:flex-end;flex-shrink:0}
@@ -286,7 +260,6 @@ const DEL   = (r)    => api('DELETE', r);
 function fmtH(ts) { return ts ? new Date(ts).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : ''; }
 function fmtV(v)  { return v  ? 'R$ ' + parseFloat(v).toFixed(2).replace('.', ',') : '—'; }
 
-// ── Login ──────────────────────────────────────────────────
 function selAt(n) {
     AT = n;
     document.querySelectorAll('.lat').forEach(b => b.classList.remove('on'));
@@ -324,7 +297,6 @@ function filtrar(f) {
     document.getElementById({ todas:'tTodas', abertas:'tAbertas', clientes:'tClientes', motoboys:'tMotob' }[f]).classList.add('on');
 }
 
-// ── Poll ───────────────────────────────────────────────────
 async function poll() {
     const lista = await GET('/api/conv');
     if (!lista) return;
@@ -338,7 +310,7 @@ async function poll() {
     if (!CONV) return;
     const c = await GET(`/api/conv/${CONV}`);
     if (!c) return;
-    const msgs    = c.msgs || [];
+    const msgs     = c.msgs || [];
     const novoHash = msgs.length + '_' + (msgs[msgs.length - 1]?.id || '');
     if (novoHash === HASH) return;
     HASH = novoHash;
@@ -347,9 +319,8 @@ async function poll() {
     await carregarArqs(CONV);
 }
 
-// ── Lista ──────────────────────────────────────────────────
 function renderLista(lista) {
-    const comMsg   = lista.filter(c => c.msgs?.some(m => m.tipo === 'user'));
+    const comMsg    = lista.filter(c => c.msgs?.some(m => m.tipo === 'user'));
     const filtrados = comMsg.filter(c => {
         if (FILTRO === 'abertas')  return c.aberta && c.info?.atendenteAtivo;
         if (FILTRO === 'clientes') return c.info?.userType === 'cliente';
@@ -383,7 +354,6 @@ function renderLista(lista) {
     }).join('');
 }
 
-// ── Abrir chat ─────────────────────────────────────────────
 async function abrirChat(id) {
     CONV = id; ENTROU = false; HASH = ''; fechaSb();
     await PATCH(`/api/conv/${id}`, { lida: true });
@@ -391,21 +361,17 @@ async function abrirChat(id) {
     if (!c) return;
     document.getElementById('noconv').style.display = 'none';
     const ca = document.getElementById('chatOpen');
-    ca.style.display       = 'flex';
-    ca.style.flexDirection = 'column';
-    ca.style.flex          = '1';
-    ca.style.overflow      = 'hidden';
-    const nome = c.info?.nome     || 'Cliente';
-    const wa   = c.info?.whatsapp || '—';
+    ca.style.display = 'flex'; ca.style.flexDirection = 'column'; ca.style.flex = '1'; ca.style.overflow = 'hidden';
+    const nome = c.info?.nome || 'Cliente', wa = c.info?.whatsapp || '—';
     const ut   = c.info?.userType === 'motoboy' ? 'Motoboy' : 'Cliente';
     document.getElementById('ctit').textContent = nome;
     document.getElementById('csub').textContent = `${ut} • WhatsApp: ${wa}`;
     const cards = [];
-    if (c.info?.whatsapp)          cards.push(`<div class="ic"><span>WhatsApp: </span><strong>${c.info.whatsapp}</strong></div>`);
-    if (c.info?.coleta?.cidade)    cards.push(`<div class="ic"><span>Coleta: </span><strong>${c.info.coleta.cidade}</strong>${c.info.coleta.endereco ? `<br><small>${c.info.coleta.endereco}</small>` : ''}</div>`);
-    if (c.info?.entrega?.cidade)   cards.push(`<div class="ic"><span>Entrega: </span><strong>${c.info.entrega.cidade}</strong>${c.info.entrega.endereco ? `<br><small>${c.info.entrega.endereco}</small>` : ''}</div>`);
+    if (c.info?.whatsapp)           cards.push(`<div class="ic"><span>WhatsApp: </span><strong>${c.info.whatsapp}</strong></div>`);
+    if (c.info?.coleta?.cidade)     cards.push(`<div class="ic"><span>Coleta: </span><strong>${c.info.coleta.cidade}</strong>${c.info.coleta.endereco ? `<br><small>${c.info.coleta.endereco}</small>` : ''}</div>`);
+    if (c.info?.entrega?.cidade)    cards.push(`<div class="ic"><span>Entrega: </span><strong>${c.info.entrega.cidade}</strong>${c.info.entrega.endereco ? `<br><small>${c.info.entrega.endereco}</small>` : ''}</div>`);
     if (c.info?.destinatario?.nome) cards.push(`<div class="ic"><span>Destinatário: </span><strong>${c.info.destinatario.nome}</strong>${c.info.destinatario.tel ? `<br><small>${c.info.destinatario.tel}</small>` : ''}</div>`);
-    if (c.info?.valor)             cards.push(`<div class="ic"><span>Valor: </span><strong style="color:#ffc107">${fmtV(c.info.valor)}</strong> ${c.info.distancia ? `(${c.info.distancia.toFixed(1)} km)` : ''}</div>`);
+    if (c.info?.valor)              cards.push(`<div class="ic"><span>Valor: </span><strong style="color:#ffc107">${fmtV(c.info.valor)}</strong> ${c.info.distancia ? `(${c.info.distancia.toFixed(1)} km)` : ''}</div>`);
     document.getElementById('icards').innerHTML = cards.join('');
     ENTROU = !!c.info?.atendenteAtivo;
     const clienteAguarda = c.msgs?.some(m => m.tipo === 'user');
@@ -419,29 +385,22 @@ async function abrirChat(id) {
     HASH = c.msgs?.length + '_' + (c.msgs?.[c.msgs.length - 1]?.id || '');
 }
 
-// ── Banners PIX ────────────────────────────────────────────
 function atualizarBanners(c) {
-    const bpix = document.getElementById('bpix');
-    const btn  = document.getElementById('bconf');
+    const bpix = document.getElementById('bpix'), btn = document.getElementById('bconf');
     const aguP = c.info?.aguardandoConfirmacao && !c.info?.pagamentoConfirmado;
     if (aguP) {
         bpix.style.display = 'block';
         document.getElementById('pval').textContent = fmtV(c.info.valor);
-        btn.classList.remove('done');
-        btn.disabled    = false;
+        btn.classList.remove('done'); btn.disabled = false;
         btn.textContent = '✅ Confirmar recebimento do pagamento';
     } else if (c.info?.pagamentoConfirmado) {
         bpix.style.display = 'block';
         document.getElementById('pval').textContent = fmtV(c.info.valor);
-        btn.classList.add('done');
-        btn.disabled    = true;
+        btn.classList.add('done'); btn.disabled = true;
         btn.textContent = '✔ Pagamento já confirmado';
-    } else {
-        bpix.style.display = 'none';
-    }
+    } else { bpix.style.display = 'none'; }
 }
 
-// ── Comprovantes ───────────────────────────────────────────
 async function carregarArqs(id) {
     const arqs  = await GET(`/api/conv/${id}/arq`);
     const sec   = document.getElementById('comps');
@@ -449,40 +408,40 @@ async function carregarArqs(id) {
     if (!arqs || arqs.length === 0) { sec.style.display = 'none'; return; }
     sec.style.display = 'block';
     lista.innerHTML   = arqs.map((a, i) =>
-        `<div class="cthumb" onclick="abrirLB('${a.dados}')"><img src="${a.dados}" alt="Comp ${i + 1}"><div>${(a.nome || 'arq').substring(0, 10)}</div></div>`
+        `<div class="cthumb" onclick="abrirLB('${a.dados}')"><img src="${a.dados}" alt="Comp ${i+1}"><div>${(a.nome||'arq').substring(0,10)}</div></div>`
     ).join('');
 }
 
-// ── Entrar na conversa ─────────────────────────────────────
 async function entrarConv() {
     if (!CONV || !AT) return;
     await PATCH(`/api/conv/${CONV}`, { atendente: AT, aberta: true, lida: true });
     ENTROU = true;
-    document.getElementById('bent').style.display    = 'none';
-    document.getElementById('cp').disabled            = false;
-    document.getElementById('bresp').disabled         = false;
+    document.getElementById('bent').style.display = 'none';
+    document.getElementById('cp').disabled         = false;
+    document.getElementById('bresp').disabled      = false;
     document.getElementById('cp').focus();
-    document.getElementById('csub').textContent += ' • Atendendo agora';
+    document.getElementById('csub').textContent   += ' • Atendendo agora';
 }
 
-// ── Confirmar pagamento ────────────────────────────────────
 async function confPag() {
     if (!CONV || !AT) return;
     await PATCH(`/api/conv/${CONV}`, { pagamentoConfirmado: true, aguardandoConfirmacao: false });
     await POST(`/api/conv/${CONV}/msgs`, {
-        tipo:      'atendente',
-        texto:     '✅ Pagamento confirmado! Sua entrega foi registrada. Em breve nosso motoboy irá buscar seu pedido. 🚚',
+        tipo: 'atendente',
+        texto: '✅ Pagamento confirmado! Sua entrega foi registrada. Em breve nosso motoboy irá buscar seu pedido. 🚚',
         atendente: AT
     });
 }
 
 function fechaChat() {
     CONV = null; ENTROU = false; HASH = '';
-    document.getElementById('noconv').style.display    = 'flex';
-    document.getElementById('chatOpen').style.display  = 'none';
+    document.getElementById('noconv').style.display   = 'flex';
+    document.getElementById('chatOpen').style.display = 'none';
 }
 
-// ── renderMsgs — alinhamento corrigido ────────────────────
+// ── renderMsgs ─────────────────────────────────────────────
+// Cliente (user / user_img) → ESQUERDA (verde escuro)
+// Bot + Atendente           → DIREITA  (verde WhatsApp)
 function renderMsgs(c) {
     const nc = c.info?.nome || 'Cliente';
     const el = document.getElementById('cmsg');
@@ -490,7 +449,7 @@ function renderMsgs(c) {
     el.innerHTML = (c.msgs || []).map(m => {
         const h = fmtH(m.ts);
 
-        // Atendente humano → DIREITA (verde WhatsApp)
+        // ── Atendente humano → direita ──
         if (m.tipo === 'atendente') {
             return `
             <div class="mp mat">
@@ -500,7 +459,17 @@ function renderMsgs(c) {
             </div>`;
         }
 
-        // Mensagem de texto do cliente → ESQUERDA (verde escuro)
+        // ── Bot automático → direita ──
+        if (m.tipo === 'bot') {
+            return `
+            <div class="mp mat">
+                <div class="lbot">Bot</div>
+                <div class="bp">${m.texto}</div>
+                <div class="hp">${h}</div>
+            </div>`;
+        }
+
+        // ── Cliente (texto) → esquerda ──
         if (m.tipo === 'user') {
             return `
             <div class="mp musr">
@@ -510,7 +479,7 @@ function renderMsgs(c) {
             </div>`;
         }
 
-        // Imagem/comprovante do cliente → ESQUERDA (verde escuro)
+        // ── Cliente (imagem/comprovante) → esquerda ──
         if (m.tipo === 'user_img') {
             return `
             <div class="mp musr">
@@ -520,10 +489,10 @@ function renderMsgs(c) {
             </div>`;
         }
 
-        // Bot (mensagens automáticas do chatbot) → ESQUERDA (cinza)
+        // fallback — esquerda
         return `
-        <div class="mp mbot">
-            <div class="lbot">Bot</div>
+        <div class="mp musr">
+            <div class="lusr">${nc}</div>
             <div class="bp">${m.texto}</div>
             <div class="hp">${h}</div>
         </div>`;
@@ -532,17 +501,13 @@ function renderMsgs(c) {
     el.scrollTop = el.scrollHeight;
 }
 
-// ── Responder ──────────────────────────────────────────────
 async function responder() {
-    const cp  = document.getElementById('cp');
-    const txt = cp.value.trim();
+    const cp = document.getElementById('cp'), txt = cp.value.trim();
     if (!txt || !CONV || !ENTROU) return;
-    cp.value      = '';
-    cp.style.height = 'auto';
+    cp.value = ''; cp.style.height = 'auto';
     await POST(`/api/conv/${CONV}/msgs`, { tipo: 'atendente', texto: txt, atendente: AT });
 }
 
-// ── Menu de ações ──────────────────────────────────────────
 function abreMenu(e, id) { e.stopPropagation(); ACAO = id; document.getElementById('ovModal').style.display = 'flex'; }
 function fechaModal() { document.getElementById('ovModal').style.display = 'none'; ACAO = null; }
 async function acao(tipo) {

@@ -38,6 +38,7 @@ app.get('/', (req, res) => {
 app.get('/painel', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'painel-atendentes.html'));
 });
+
 // ── Banco ──────────────────────────────────────────────────
 let DB;
 

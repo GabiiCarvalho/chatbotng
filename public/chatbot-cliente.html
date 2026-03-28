@@ -44,7 +44,6 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#e5ddd5;display:flex;
 .benv{width:44px;height:44px;border-radius:50%;background:var(--v);border:none;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0}
 .benv:hover{background:var(--v2)}.benv:disabled{background:#aaa;cursor:not-allowed}
 .imgp{max-width:100%;max-height:200px;border-radius:12px;object-fit:cover;cursor:pointer;display:block;margin-top:4px}
-/* ── Card PIX ── */
 .cpix{background:#fff;border-radius:16px;padding:16px;box-shadow:0 2px 16px rgba(0,0,0,.12);border:2px solid #43a047;width:100%}
 .cpix-h{display:flex;align-items:center;gap:8px;margin-bottom:8px}
 .cpix-ic{width:32px;height:32px;background:#e8f5e9;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
@@ -107,11 +106,13 @@ const PRICING_CONFIG = {
     valorMaximo:       500.00
 };
 
-// ── Sessão ─────────────────────────────────────────────────
-let meuId = sessionStorage.getItem('ngid');
+// ── Sessão — reutiliza a mesma conversa se nome+tel já existirem ──
+// O ID é guardado no localStorage (persiste entre abas/recargas)
+// Se o servidor reconhecer nome+WA, o mesmo meuId é reutilizado
+let meuId = localStorage.getItem('ngid');
 if (!meuId) {
     meuId = 'c' + Date.now() + Math.random().toString(36).slice(2, 6);
-    sessionStorage.setItem('ngid', meuId);
+    localStorage.setItem('ngid', meuId);
 }
 
 const DIGITAVEIS = new Set(['nome', 'wa', 'col_cid', 'ent_cid', 'col_end', 'ent_end', 'dest_nome', 'dest_tel', 'mb_reg', 'livre']);
@@ -121,7 +122,7 @@ let E = {
     col: { cid: '', end: '' }, ent: { cid: '', end: '' },
     dest: { nome: '', tel: '' }, mb: { reg: '' },
     outraPessoa: false,
-    valor: 0, distancia: 0, pix: '', esperandoAt: false, atEntrou: false,
+    valor: 0, distancia: 0, esperandoAt: false, atEntrou: false,
     pagConfirmado: false, ant: null
 };
 let arquivoPend = null, pollingAtivo = false, ultimaMsgAtId = '', pixStr = '';
@@ -178,10 +179,10 @@ async function api(m, r, b) {
         return res.ok ? res.json() : null;
     } catch (e) { return null; }
 }
-const GET     = (r)    => api('GET',   r);
-const POST    = (r, b) => api('POST',  r, b);
-const PATCH   = (r, b) => api('PATCH', r, b);
-const savMsg  = (tipo, texto, at) => POST(`/api/conv/${meuId}/msgs`, { tipo, texto, atendente: at || '' });
+const GET      = (r)    => api('GET',   r);
+const POST     = (r, b) => api('POST',  r, b);
+const PATCH    = (r, b) => api('PATCH', r, b);
+const savMsg   = (tipo, texto, at) => POST(`/api/conv/${meuId}/msgs`, { tipo, texto, atendente: at || '' });
 const saveConv = d => PATCH(`/api/conv/${meuId}`, d);
 
 // ── DOM helpers ────────────────────────────────────────────
@@ -307,18 +308,15 @@ async function enviarArquivo() {
     typing(() => addMsg('📎 Comprovante recebido! O atendente irá verificar em breve.'), 800);
 }
 
-// ── PIX display — Mercado Pago ────────────────────────────
+// ── PIX display ────────────────────────────────────────────
 function exibirPix(qrCode, qrCodeBase64, valor) {
     pixStr = qrCode;
     const div = document.createElement('div');
     div.className = 'msg bot';
     const w = document.createElement('div');
-
-    // Monta imagem do QR Code: usa base64 do MP se disponível
     const qrImgHtml = qrCodeBase64
         ? `<div class="cpix-qr"><img src="data:image/png;base64,${qrCodeBase64}" alt="QR Code PIX"></div>`
         : `<div class="cpix-qr" id="qrW"></div>`;
-
     w.innerHTML = `<div class="cpix">
         <div class="cpix-h">
             <div class="cpix-ic">💚</div>
@@ -369,33 +367,57 @@ function pedirWA() {
 
 async function aposId() {
     await saveConv({ nome: E.nome, whatsapp: E.wa });
+
+    // Busca conversa anterior com mesmo nome + WhatsApp
     const ant = await GET(`/api/historico?nome=${encodeURIComponent(E.nome)}&whatsapp=${encodeURIComponent(E.wa)}&excluir=${meuId}`);
+
     if (ant && (ant.info?.coleta?.cidade || ant.info?.entrega?.cidade)) {
-        E.ant = ant; E.tipo = 'cliente'; E.step = 'menu_ret'; atualizarInput();
-        const co  = ant.info.coleta?.cidade  || '—';
-        const en  = ant.info.entrega?.cidade || '—';
+        // ── Cliente retornando com endereços salvos ──
+        E.ant  = ant;
+        E.tipo = 'cliente';
+        E.step = 'menu_ret';
+        atualizarInput();
+
+        const co  = ant.info.coleta?.cidade   || '—';
+        const en  = ant.info.entrega?.cidade  || '—';
         const eco = ant.info.coleta?.endereco  ? `<br><small style="color:#667781">${ant.info.coleta.endereco}</small>`  : '';
         const een = ant.info.entrega?.endereco ? `<br><small style="color:#667781">${ant.info.entrega.endereco}</small>` : '';
-        const dest = ant.info.destinatario?.nome ? `<br>👤 <strong>${ant.info.destinatario.nome}</strong>${ant.info.destinatario.tel ? ' • ' + ant.info.destinatario.tel : ''}` : '';
+        const dest = ant.info.destinatario?.nome
+            ? `<br>👤 <strong>${ant.info.destinatario.nome}</strong>${ant.info.destinatario.tel ? ' • ' + ant.info.destinatario.tel : ''}`
+            : '';
+
         typing(() => addMsg(
-            `Que bom ter você de volta, <strong>${E.nome}</strong>! 🎉<br><br>Última entrega:<br><br>📍 <strong>Coleta:</strong> ${co}${eco}<br>📍 <strong>Entrega:</strong> ${en}${een}${dest}<br><br>Deseja usar esses endereços novamente?`,
-            'bot', [
-                { t: '✅ Sim, usar esses endereços', fn: usarAnt },
-                { t: '❌ Não, informar novos',       fn: novoEnd }
+            `Que bom ter você de volta, <strong>${E.nome}</strong>! 🎉<br><br>Sua última entrega foi:<br><br>📍 <strong>Coleta:</strong> ${co}${eco}<br>📍 <strong>Entrega:</strong> ${en}${een}${dest}<br><br>Os endereços são os <strong>mesmos</strong> desta vez?`,
+            'bot',
+            [
+                { t: '✅ Sim, mesmos endereços', fn: usarAnt  },
+                { t: '❌ Não, informar novos',   fn: novoEnd  }
             ]
         ), 1000);
-    } else { menu(); }
+    } else {
+        // Cliente novo → menu normal
+        menu();
+    }
 }
 
+// Usa os endereços anteriores direto e vai para calcRota
 function usarAnt() {
-    E.col  = { ...E.ant.info.coleta }       || { cid: '', end: '' };
-    E.ent  = { ...E.ant.info.entrega }      || { cid: '', end: '' };
-    E.dest = { ...E.ant.info.destinatario } || { nome: '', tel: '' };
-    E.step = 'auto'; atualizarInput();
+    E.col  = { cid: E.ant.info.coleta?.cidade   || '', end: E.ant.info.coleta?.endereco  || '' };
+    E.ent  = { cid: E.ant.info.entrega?.cidade  || '', end: E.ant.info.entrega?.endereco || '' };
+    E.dest = { nome: E.ant.info.destinatario?.nome || '', tel: E.ant.info.destinatario?.tel || '' };
+    E.tipo = 'cliente';
+    E.step = 'auto';
+    atualizarInput();
     typing(() => calcRota(), 600);
 }
 
-function novoEnd() { E.step = 'col_cid'; atualizarInput(); typing(() => addMsg('📍 Qual a <strong>cidade de coleta</strong>?'), 600); }
+// Informa novos endereços
+function novoEnd() {
+    E.tipo = 'cliente';
+    E.step = 'col_cid';
+    atualizarInput();
+    typing(() => addMsg('📍 Qual a <strong>cidade de coleta</strong>?'), 600);
+}
 
 function menu() {
     E.step = 'menu'; atualizarInput();
@@ -413,7 +435,10 @@ function fluxoCliente() {
     ]), 600);
 }
 
-function solicitar() { E.step = 'col_cid'; atualizarInput(); typing(() => addMsg('📍 Qual a <strong>cidade de coleta</strong>?'), 600); }
+function solicitar() {
+    E.step = 'col_cid'; atualizarInput();
+    typing(() => addMsg('📍 Qual a <strong>cidade de coleta</strong>?'), 600);
+}
 
 async function falarAt() {
     await saveConv({ userType: 'cliente' });
@@ -434,6 +459,7 @@ async function fluxoMotoboy() {
     typing(() => addMsg(`🛵 Olá <strong>${E.nome}</strong>!<br><br>📍 Em qual <strong>região</strong> você atua?<br><small style="color:#667781">Ex: Vale do Itajaí, Litoral, etc</small>`), 800);
 }
 
+// ── Pergunta quem recebe ───────────────────────────────────
 function perguntarReceptor() {
     E.step = 'quem_recebe'; atualizarInput();
     typing(() => addMsg('👤 Quem irá <strong>receber</strong> a entrega?', 'bot', [
@@ -443,7 +469,9 @@ function perguntarReceptor() {
 }
 
 function receptorSouEu() {
-    E.outraPessoa = false; E.dest.nome = E.nome; E.dest.tel = E.wa;
+    E.outraPessoa = false;
+    E.dest.nome   = E.nome;
+    E.dest.tel    = E.wa;
     calcRota();
 }
 
@@ -464,7 +492,10 @@ async function calcRota() {
     msgsEl.appendChild(d); msgsEl.scrollTop = msgsEl.scrollHeight;
 
     try {
-        const [coordColeta, coordEntrega] = await Promise.all([geocodificar(endColeta), geocodificar(endEntrega)]);
+        const [coordColeta, coordEntrega] = await Promise.all([
+            geocodificar(endColeta),
+            geocodificar(endEntrega)
+        ]);
         const rota  = await calcularRotaHere(coordColeta, coordEntrega);
         const preco = calcularPreco(rota.distanciaKm, 'moto');
         E.valor = preco; E.distancia = rota.distanciaKm;
@@ -493,11 +524,10 @@ async function calcRota() {
     E.step = 'confirm'; atualizarInput();
 }
 
-// ── confirmarPagar — chama API do servidor que chama MP ───
+// ── Confirmar e gerar PIX no Mercado Pago ─────────────────
 async function confirmarPagar() {
     E.step = 'aguard_pag'; atualizarInput();
 
-    // Salva dados da entrega na conversa
     await saveConv({
         userType: 'cliente', valor: E.valor,
         distancia: E.distancia, veiculo: E.veiculo,
@@ -507,22 +537,16 @@ async function confirmarPagar() {
         destinatario: { nome: E.dest.nome, tel: E.dest.tel }
     });
 
-    // Mostra typing enquanto gera PIX no MP
     const d = document.createElement('div');
     d.className = 'msg bot'; d.id = 'typing';
     d.innerHTML = '<div class="typing"><span></span><span></span><span></span></div>';
     msgsEl.appendChild(d); msgsEl.scrollTop = msgsEl.scrollHeight;
 
     try {
-        // Chama o servidor para gerar cobrança PIX no Mercado Pago
         const resp = await fetch('/api/pix/criar', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                convId:      meuId,
-                valor:       E.valor,
-                nomeCliente: E.nome,
-            })
+            body: JSON.stringify({ convId: meuId, valor: E.valor, nomeCliente: E.nome })
         });
 
         const t = document.getElementById('typing'); if (t) t.remove();
@@ -533,7 +557,6 @@ async function confirmarPagar() {
         }
 
         const dados = await resp.json();
-
         addMsg('💳 Realize o pagamento via PIX para confirmar sua entrega:');
         setTimeout(() => {
             exibirPix(dados.qrCode, dados.qrCodeBase64, dados.valor);
@@ -564,6 +587,7 @@ function cancelar() {
 async function processar(txt) {
     const msg = txt.trim();
     if (!msg || !DIGITAVEIS.has(E.step)) return;
+
     const div = document.createElement('div');
     div.className = 'msg usr';
     div.innerHTML = `<div class="bal">${msg}</div><div class="hr">${hora()}</div>`;
@@ -572,14 +596,14 @@ async function processar(txt) {
     campoEl.value = '';
 
     switch (E.step) {
-        case 'nome':     E.nome = msg; pedirWA(); break;
-        case 'wa':       E.wa = msg; atualizarInput(); aposId(); break;
-        case 'col_cid':  E.col.cid = msg; E.step = 'ent_cid'; atualizarInput(); typing(() => addMsg(`✅ Coleta: <strong>${msg}</strong><br><br>📍 Qual a <strong>cidade de entrega</strong>?`)); break;
-        case 'ent_cid':  E.ent.cid = msg; E.step = 'col_end'; atualizarInput(); typing(() => addMsg('🏠 Endereço completo de <strong>coleta</strong><br><small style="color:#667781">Rua, Número, Bairro</small>')); break;
-        case 'col_end':  E.col.end = msg; E.step = 'ent_end'; atualizarInput(); typing(() => addMsg('🏠 Endereço completo de <strong>entrega</strong><br><small style="color:#667781">Rua, Número, Bairro</small>')); break;
-        case 'ent_end':  E.ent.end = msg; perguntarReceptor(); break;
+        case 'nome':      E.nome = msg; pedirWA(); break;
+        case 'wa':        E.wa   = msg; atualizarInput(); aposId(); break;
+        case 'col_cid':   E.col.cid = msg; E.step = 'ent_cid'; atualizarInput(); typing(() => addMsg(`✅ Coleta: <strong>${msg}</strong><br><br>📍 Qual a <strong>cidade de entrega</strong>?`)); break;
+        case 'ent_cid':   E.ent.cid = msg; E.step = 'col_end'; atualizarInput(); typing(() => addMsg('🏠 Endereço completo de <strong>coleta</strong><br><small style="color:#667781">Rua, Número, Bairro</small>')); break;
+        case 'col_end':   E.col.end = msg; E.step = 'ent_end'; atualizarInput(); typing(() => addMsg('🏠 Endereço completo de <strong>entrega</strong><br><small style="color:#667781">Rua, Número, Bairro</small>')); break;
+        case 'ent_end':   E.ent.end = msg; perguntarReceptor(); break;
         case 'dest_nome': E.dest.nome = msg; E.step = 'dest_tel'; atualizarInput(); typing(() => addMsg(`📱 Qual o <strong>WhatsApp de ${msg}</strong>?<br><small style="color:#667781">Ex: (47) 99999-9999</small>`)); break;
-        case 'dest_tel': E.dest.tel = msg; calcRota(); break;
+        case 'dest_tel':  E.dest.tel = msg; calcRota(); break;
         case 'mb_reg':
             E.mb.reg = msg; E.step = 'espera_at'; E.esperandoAt = true; atualizarInput();
             await saveConv({ motoboy: { regiao: msg } });
@@ -616,6 +640,7 @@ async function poll() {
         const div = document.createElement('div'); div.className = 'msg bot';
         div.innerHTML = `<div class="bal" style="background:#e8f5e9;border-left:3px solid #4caf50;border-bottom-left-radius:4px">✅ <strong>Pagamento confirmado!</strong><br><br>🚚 Sua entrega foi registrada!<br><br>💚 Obrigado, <strong>${E.nome}</strong>!<br><br>Deseja fazer uma nova solicitação?</div><div class="hr">${hora()}</div>`;
         msgsEl.appendChild(div);
+
         const row = document.createElement('div'); row.className = 'opts';
         const btn = document.createElement('button'); btn.className = 'ob'; btn.textContent = '📦 Nova Solicitação';
         btn.onclick = () => {
