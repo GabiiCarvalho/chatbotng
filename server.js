@@ -13,7 +13,8 @@ const DB_FILE = path.join(__dirname, 'banco.db');
 // ── Mercado Pago ───────────────────────────────────────────
 const MP_ACCESS_TOKEN   = process.env.MP_ACCESS_TOKEN   || 'APP_USR-460981285996431-032818-00692b024b5a6ec3db98a3e0645429d3-1651166060';
 const MP_WEBHOOK_SECRET = process.env.MP_WEBHOOK_SECRET || '06611dddba6e420e383464cb08e693856ff24d9bfd4038b628ceaf41f6872c07';
-const BASE_URL          = process.env.BASE_URL          || 'chatbotng-production.up.railway.app';
+// ✅ https:// obrigatório — Mercado Pago rejeita webhook sem protocolo
+const BASE_URL = process.env.BASE_URL || 'https://chatbotng-production.up.railway.app';
 
 app.use(cors({ origin: '*' }));
 app.use(express.json({ limit: '25mb' }));
@@ -26,6 +27,17 @@ const PRICING_CONFIG = {
     limiteKmMinimo:    7
 };
 
+
+//-- URL-----------------------------------
+// Raiz → chatbot do cliente
+app.get('/', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'chatbot-cliente.html'));
+});
+
+// /painel → painel dos atendentes
+app.get('/painel', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public', 'painel-atendentes.html'));
+});
 // ── Banco ──────────────────────────────────────────────────
 let DB;
 
@@ -63,7 +75,7 @@ async function abrirBanco() {
         atualizada INTEGER
     )`);
 
-    // ── Migração: garante que todas as colunas existem em bancos antigos ──
+    // Migração: garante que todas as colunas existem em bancos antigos
     const migracoes = [
         `ALTER TABLE conversas ADD COLUMN mp_payment_id TEXT DEFAULT ''`,
         `ALTER TABLE conversas ADD COLUMN distancia_km REAL DEFAULT 0`,
@@ -146,11 +158,11 @@ function montar(c) {
     const arquivos  = todos('SELECT id,nome,mime,dados,ts FROM arquivos WHERE conv_id=? ORDER BY ts ASC', [c.id]);
     return {
         id: c.id,
-        aberta:   !!c.aberta,
-        lida:     !!c.lida,
-        arquivada:!!c.arquivada,
-        ultima:   c.ultima,
-        ts:       c.atualizada,
+        aberta:    !!c.aberta,
+        lida:      !!c.lida,
+        arquivada: !!c.arquivada,
+        ultima:    c.ultima,
+        ts:        c.atualizada,
         msgs: mensagens.map(m => ({ id: m.id, tipo: m.tipo, texto: m.texto, atendente: m.atendente, ts: m.ts })),
         arquivos: arquivos.map(a => ({ id: a.id, nome: a.nome, mime: a.mime, dados: a.dados, ts: a.ts })),
         info: {
@@ -161,10 +173,10 @@ function montar(c) {
             aguardandoConfirmacao: !!c.aguard_pag,
             pagamentoConfirmado:   !!c.pag_conf,
             distancia: c.distancia_km, veiculo: c.veiculo,
-            coleta:      { cidade: c.coleta_cidade,  endereco: c.coleta_end  },
-            entrega:     { cidade: c.entrega_cidade, endereco: c.entrega_end },
-            destinatario:{ nome: c.dest_nome, tel: c.dest_tel },
-            motoboy:     { regiao: c.motoboy_regiao }
+            coleta:       { cidade: c.coleta_cidade,  endereco: c.coleta_end  },
+            entrega:      { cidade: c.entrega_cidade, endereco: c.entrega_end },
+            destinatario: { nome: c.dest_nome, tel: c.dest_tel },
+            motoboy:      { regiao: c.motoboy_regiao }
         }
     };
 }
@@ -178,8 +190,8 @@ function mpRequest(method, endpoint, body) {
             path:     endpoint,
             method,
             headers: {
-                'Authorization':    `Bearer ${MP_ACCESS_TOKEN}`,
-                'Content-Type':     'application/json',
+                'Authorization':     `Bearer ${MP_ACCESS_TOKEN}`,
+                'Content-Type':      'application/json',
                 'X-Idempotency-Key': uuid(),
             }
         };
@@ -189,7 +201,7 @@ function mpRequest(method, endpoint, body) {
             res.on('data', chunk => raw += chunk);
             res.on('end', () => {
                 try { resolve({ status: res.statusCode, body: JSON.parse(raw) }); }
-                catch (e) { reject(new Error('Resposta inválida MP: ' + raw.slice(0, 100))); }
+                catch (e) { reject(new Error('Resposta inválida MP: ' + raw.slice(0, 200))); }
             });
         });
         req.on('error', reject);
@@ -303,7 +315,7 @@ app.post('/api/pix/criar', async (req, res) => {
     if (!convId || !valor) return res.status(400).json({ erro: 'convId e valor obrigatórios' });
 
     try {
-        const body = {
+        const mpBody = {
             transaction_amount: parseFloat(parseFloat(valor).toFixed(2)),
             description:        `Entrega N&G Express #${convId.slice(-6).toUpperCase()}`,
             payment_method_id:  'pix',
@@ -317,17 +329,17 @@ app.post('/api/pix/criar', async (req, res) => {
             external_reference: convId,
         };
 
-        const resp = await mpRequest('POST', '/v1/payments', body);
+        console.log('📤 Criando PIX no MP:', JSON.stringify(mpBody));
+        const resp = await mpRequest('POST', '/v1/payments', mpBody);
+        console.log('📥 Resposta MP:', resp.status, JSON.stringify(resp.body).slice(0, 300));
 
         if (resp.status !== 201) {
-            console.error('❌ Erro MP criar PIX:', JSON.stringify(resp.body));
             return res.status(502).json({ erro: 'Erro no Mercado Pago', detalhe: resp.body });
         }
 
         const pix = resp.body.point_of_interaction?.transaction_data;
-        if (!pix?.qr_code) return res.status(502).json({ erro: 'MP não retornou QR Code' });
+        if (!pix?.qr_code) return res.status(502).json({ erro: 'MP não retornou QR Code PIX' });
 
-        // Salva payment_id e payload na conversa
         rodar(
             'UPDATE conversas SET mp_payment_id=?, pix=?, aguard_pag=1, atualizada=? WHERE id=?',
             [String(resp.body.id), pix.qr_code, agora(), convId]
@@ -348,7 +360,7 @@ app.post('/api/pix/criar', async (req, res) => {
 
 // ── PIX — Webhook do Mercado Pago ─────────────────────────
 app.post('/api/pix/webhook', async (req, res) => {
-    res.sendStatus(200); // responde imediatamente
+    res.sendStatus(200);
 
     try {
         const { type, data } = req.body;
@@ -364,12 +376,9 @@ app.post('/api/pix/webhook', async (req, res) => {
         if (!convId) return;
 
         const c = um('SELECT * FROM conversas WHERE id=?', [convId]);
-        if (!c || c.pag_conf) return; // já confirmado
+        if (!c || c.pag_conf) return;
 
-        rodar(
-            'UPDATE conversas SET pag_conf=1, aguard_pag=0, lida=0, atualizada=? WHERE id=?',
-            [agora(), convId]
-        );
+        rodar('UPDATE conversas SET pag_conf=1, aguard_pag=0, lida=0, atualizada=? WHERE id=?', [agora(), convId]);
 
         const msgId = uuid(), ts = agora();
         rodar(
@@ -380,13 +389,13 @@ app.post('/api/pix/webhook', async (req, res) => {
         );
         rodar('UPDATE conversas SET ultima=?,atualizada=? WHERE id=?', ['✅ Pagamento confirmado!', ts, convId]);
 
-        console.log(`✅ PIX aprovado automaticamente — conversa ${convId}`);
+        console.log(`✅ PIX aprovado — conversa ${convId}`);
     } catch (err) {
         console.error('❌ Erro webhook:', err.message);
     }
 });
 
-// ── PIX — Consultar status manualmente ────────────────────
+// ── PIX — Consultar status ────────────────────────────────
 app.get('/api/pix/status/:convId', async (req, res) => {
     const c = um('SELECT * FROM conversas WHERE id=?', [req.params.convId]);
     if (!c) return res.status(404).json({ erro: 'não encontrada' });
