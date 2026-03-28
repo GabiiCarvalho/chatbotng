@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>N&G Express - Atendimento WhatsApp</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: linear-gradient(135deg, #075e54 0%, #128c7e 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            text-align: center;
+            max-width: 400px;
+            width: 100%;
+        }
+
+        .logo {
+            width: 80px;
+            height: 80px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+
+        .logo i {
+            font-size: 40px;
+            color: #075e54;
+        }
+
+        h1 {
+            color: white;
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+        }
+
+        p {
+            color: rgba(255,255,255,0.9);
+            margin-bottom: 30px;
+            font-size: 1rem;
+        }
+
+        .whatsapp-btn {
+            background: #25d366;
+            color: white;
+            border: none;
+            padding: 16px 32px;
+            border-radius: 50px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            margin-bottom: 20px;
+            transition: transform 0.2s;
+        }
+
+        .whatsapp-btn:active {
+            transform: scale(0.98);
+        }
+
+        .chatbot-link {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.3);
+            padding: 12px 24px;
+            border-radius: 50px;
+            font-size: 1rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none;
+            margin-top: 10px;
+        }
+
+        .info {
+            margin-top: 30px;
+            color: rgba(255,255,255,0.7);
+            font-size: 0.8rem;
+        }
+
+        @media (max-width: 480px) {
+            .whatsapp-btn {
+                padding: 14px 28px;
+                font-size: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">
+            <svg width="50" height="50" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 2C6.48 2 2 6.48 2 12c0 1.82.48 3.53 1.33 5.02L2 22l4.98-1.33C8.47 21.52 10.18 22 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2z" fill="#075e54"/>
+                <path d="M12 4c4.42 0 8 3.58 8 8s-3.58 8-8 8c-1.46 0-2.86-.39-4.07-1.07L6 19l1.21-3.04C6.47 14.86 6 13.46 6 12c0-4.42 3.58-8 8-8z" fill="#fff"/>
+                <path d="M16.5 14.5c-.2-.1-1.2-.6-1.4-.7-.2-.1-.3-.1-.5.1-.2.2-.7.8-.9 1-.1.2-.2.2-.5.1-.8-.3-1.6-.9-2.1-1.5-.2-.2-.4-.5-.6-.8-.1-.2 0-.3.1-.4.1-.1.2-.2.3-.4.1-.1.1-.2.1-.3 0-.1-.1-.3-.2-.4-.1-.1-.5-1.2-.7-1.6-.2-.4-.4-.3-.5-.3h-.5c-.2 0-.5.1-.7.3-.2.2-.9.9-.9 2.1 0 1.2.9 2.4 1 2.6.1.2 1.7 2.6 4.1 3.6.6.2 1 .4 1.4.5.6.2 1.1.1 1.5.1.5 0 1.5-.2 1.7-.4.2-.2.3-.5.4-.9.1-.4.1-.7.1-.8 0-.1-.1-.2-.2-.2z" fill="#075e54"/>
+            </svg>
+        </div>
+        <h1>N&G Express</h1>
+        <p>Atendimento via WhatsApp<br>Entregas rápidas e seguras</p>
+        
+        <a href="https://wa.me/5547999123260?text=Olá%2C%20gostaria%20de%20atendimento%20N%26G%20Express" 
+           class="whatsapp-btn" 
+           id="whatsappBtn">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="white">
+                <path d="M12 2C6.48 2 2 6.48 2 12c0 1.82.48 3.53 1.33 5.02L2 22l4.98-1.33C8.47 21.52 10.18 22 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2z"/>
+            </svg>
+            Abrir WhatsApp
+        </a>
+        
+        <a href="chatbot-mobile.html" class="chatbot-link">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="white">
+                <path d="M20 2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h4l4 4 4-4h4c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z"/>
+            </svg>
+            Abrir Chatbot
+        </a>
+        
+        <div class="info">
+            <p>📞 Atendimento: (47) 99912-3260</p>
+            <p>⏰ 24h | Todos os dias</p>
+        </div>
+    </div>
+
+    <script>
+        // Detectar se é mobile e ajustar
+        if (/Mobi|Android|iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+            document.querySelector('.whatsapp-btn').style.display = 'flex';
+        }
+        
+        // Salvar número do WhatsApp
+        localStorage.setItem('whatsapp_number', '5547999123260');
+    </script>
+</body>
+</html>

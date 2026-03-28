@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>N&G Express — Atendimento</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{--v:#075e54;--v2:#128c7e;--v3:#25d366;--vc:#dcf8c6;--bg:#f0f2f5;--br:#fff;--cin:#e9edef;--c2:#667781;--tx:#111b21}
+html,body{height:100%}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:#e5ddd5;display:flex;justify-content:center;align-items:stretch;min-height:100vh}
+.tela{width:100%;max-width:900px;background:var(--br);display:flex;flex-direction:column;overflow:hidden;position:relative;min-height:100vh}
+@media(min-width:768px){body{align-items:center}.tela{box-shadow:0 0 60px rgba(0,0,0,.2)}}
+.tela::before{content:'';position:absolute;inset:0;background-image:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none'%3E%3Cg fill='%23075e54' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");pointer-events:none;z-index:0}
+.hd{background:var(--v);padding:12px 20px;display:flex;align-items:center;gap:12px;position:relative;z-index:10;box-shadow:0 2px 8px rgba(0,0,0,.2);flex-shrink:0}
+.av{width:42px;height:42px;border-radius:50%;background:var(--v2);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+.hd h3{color:#fff;font-size:.95rem;font-weight:700}
+.hd p{color:rgba(255,255,255,.8);font-size:.7rem;margin-top:2px}
+.badge{margin-left:auto;background:var(--v3);color:#fff;font-size:.65rem;font-weight:600;padding:3px 10px;border-radius:20px;display:flex;align-items:center;gap:4px;white-space:nowrap}
+.dot{width:6px;height:6px;border-radius:50%;background:#fff;animation:p 2s infinite}
+@keyframes p{0%,100%{opacity:1}50%{opacity:.4}}
+.msgs{flex:1;overflow-y:auto;padding:16px 20px;display:flex;flex-direction:column;gap:4px;position:relative;z-index:1;background:var(--bg)}
+.msg{display:flex;flex-direction:column;animation:u .25s ease}
+@keyframes u{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.bot{align-items:flex-start}.usr{align-items:flex-end}
+.bal{max-width:min(82%,520px);padding:8px 12px;border-radius:18px;font-size:.9rem;line-height:1.5;word-break:break-word}
+.bot .bal{background:var(--br);color:var(--tx);border-bottom-left-radius:4px;box-shadow:0 1px 3px rgba(0,0,0,.1)}
+.usr .bal{background:var(--vc);color:var(--tx);border-bottom-right-radius:4px}
+.hr{font-size:.6rem;color:var(--c2);margin-top:3px;padding:0 4px}
+.opts{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.ob{background:var(--br);border:1.5px solid var(--v);color:var(--v);padding:7px 18px;border-radius:20px;font-size:.82rem;font-weight:600;font-family:'Plus Jakarta Sans',sans-serif;cursor:pointer;transition:all .2s}
+.ob:hover{background:var(--v);color:#fff}.ob:disabled{opacity:.4;cursor:default;pointer-events:none}
+.typing{display:inline-flex;align-items:center;gap:5px;padding:10px 14px;background:var(--br);border-radius:18px;border-bottom-left-radius:4px;box-shadow:0 1px 3px rgba(0,0,0,.1)}
+.typing span{width:7px;height:7px;border-radius:50%;background:var(--v2);animation:b 1.4s infinite ease-in-out}
+.typing span:nth-child(2){animation-delay:.2s}.typing span:nth-child(3){animation-delay:.4s}
+@keyframes b{0%,60%,100%{transform:translateY(0);opacity:.4}30%{transform:translateY(-7px);opacity:1}}
+.ia{background:var(--cin);padding:10px 12px;display:flex;align-items:center;gap:8px;position:relative;z-index:10;flex-shrink:0}
+.campo{flex:1;background:var(--br);border:none;border-radius:24px;padding:10px 16px;font-size:.9rem;font-family:'Plus Jakarta Sans',sans-serif;outline:none;color:var(--tx);min-width:0}
+.campo:disabled{background:#e0e0e0;color:#aaa;cursor:not-allowed}
+.bclip{width:40px;height:40px;border-radius:50%;background:transparent;border:none;color:var(--c2);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s}
+.bclip:hover{color:var(--v);background:rgba(7,94,84,.08)}.bclip:disabled{opacity:.35;cursor:not-allowed}
+#finp{display:none}
+.benv{width:44px;height:44px;border-radius:50%;background:var(--v);border:none;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0}
+.benv:hover{background:var(--v2)}.benv:disabled{background:#aaa;cursor:not-allowed}
+.imgp{max-width:100%;max-height:200px;border-radius:12px;object-fit:cover;cursor:pointer;display:block;margin-top:4px}
+/* ── Card PIX ── */
+.cpix{background:#fff;border-radius:16px;padding:16px;box-shadow:0 2px 16px rgba(0,0,0,.12);border:2px solid #43a047;width:100%}
+.cpix-h{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.cpix-ic{width:32px;height:32px;background:#e8f5e9;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.cpix-t{font-size:.82rem;font-weight:700;color:#2e7d32}.cpix-s{font-size:.68rem;color:#666}
+.cpix-v{font-size:1.6rem;font-weight:800;color:#1b5e20;margin:4px 0 8px}
+.cpix-qr{display:flex;justify-content:center;background:#fff;border-radius:10px;padding:10px;border:1px solid #e0e0e0;margin-bottom:10px}
+.cpix-qr img{width:180px;height:180px}
+.cpix-cod{background:#f1f8e9;border:1px dashed #a5d6a7;border-radius:8px;padding:8px 10px;font-size:.62rem;color:#2e7d32;word-break:break-all;cursor:pointer;line-height:1.4}
+.cpix-cod:hover{background:#dcedc8}.cpix-hint{font-size:.6rem;color:#888;text-align:center;margin-top:5px}
+.besp{background:#fff8e1;border:1px solid #ffe082;border-radius:12px;padding:10px 14px;margin:4px 0;font-size:.78rem;color:#795548;text-align:center;line-height:1.5}
+.bpag{background:#e8f5e9;border:1px solid #66bb6a;border-radius:12px;padding:12px 14px;margin:4px 0;text-align:center;line-height:1.7}
+.bpag strong{color:#1b5e20;font-size:.82rem;display:block;margin-bottom:4px}
+.bpag span{font-size:.73rem;color:#388e3c}
+.pdots{display:inline-flex;gap:4px;margin-top:6px}
+.pdots i{width:6px;height:6px;border-radius:50%;background:#43a047;animation:pd 1.4s infinite ease-in-out}
+.pdots i:nth-child(2){animation-delay:.2s}.pdots i:nth-child(3){animation-delay:.4s}
+@keyframes pd{0%,60%,100%{transform:scale(.6);opacity:.4}30%{transform:scale(1);opacity:1}}
+.prev-up{position:absolute;bottom:68px;left:12px;right:12px;background:#fff;border-radius:12px;padding:10px 12px;display:flex;align-items:center;gap:10px;box-shadow:0 4px 20px rgba(0,0,0,.15);border:1px solid #e0e0e0;z-index:20}
+.prev-up img{width:52px;height:52px;object-fit:cover;border-radius:8px;flex-shrink:0}
+.prev-info{flex:1;min-width:0}
+.prev-nome{font-size:.75rem;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.prev-tipo{font-size:.65rem;color:var(--c2);margin-top:2px}
+.prev-x{background:none;border:none;color:var(--c2);cursor:pointer;font-size:18px;flex-shrink:0}
+.lb{position:fixed;inset:0;background:rgba(0,0,0,.88);display:flex;align-items:center;justify-content:center;z-index:999;padding:20px}
+.lb img{max-width:100%;max-height:90vh;border-radius:12px;object-fit:contain}
+.lb-x{position:absolute;top:16px;right:16px;background:rgba(255,255,255,.15);border:none;color:#fff;font-size:22px;cursor:pointer;width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+.msgs::-webkit-scrollbar{width:5px}.msgs::-webkit-scrollbar-thumb{background:rgba(0,0,0,.15);border-radius:4px}
+</style>
+</head>
+<body>
+<div class="tela">
+  <div class="hd">
+    <div class="av">🚚</div>
+    <div><h3>N&G Express</h3><p>Entregas rápidas e seguras</p></div>
+    <div class="badge"><span class="dot"></span>Online</div>
+  </div>
+  <div class="msgs" id="msgs"></div>
+  <div class="ia" style="position:relative">
+    <input type="file" id="finp" accept="image/*,application/pdf">
+    <button class="bclip" id="bclip" disabled title="Anexar comprovante">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"/></svg>
+    </button>
+    <input class="campo" id="campo" placeholder="Digite sua mensagem..." autocomplete="off">
+    <button class="benv" id="benv">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+    </button>
+  </div>
+</div>
+<div class="lb" id="lb" style="display:none">
+  <button class="lb-x">✕</button><img id="lbImg" src="" alt="">
+</div>
+<script>
+// ── Configurações ──────────────────────────────────────────
+const HERE_API_KEY = 'O8E5nipilq9UhVMoh75UR3RxE0J3zvC1DCXR-DZVL6I';
+
+const PRICING_CONFIG = {
+    valorMinimoAte7km: { moto: 15.00, carro: 50.00 },
+    valorPorKm:        { moto: 1.80,  carro: 3.50  },
+    limiteKmMinimo:    7,
+    valorMaximo:       500.00
+};
+
+// ── Sessão ─────────────────────────────────────────────────
+let meuId = sessionStorage.getItem('ngid');
+if (!meuId) {
+    meuId = 'c' + Date.now() + Math.random().toString(36).slice(2, 6);
+    sessionStorage.setItem('ngid', meuId);
+}
+
+const DIGITAVEIS = new Set(['nome', 'wa', 'col_cid', 'ent_cid', 'col_end', 'ent_end', 'dest_nome', 'dest_tel', 'mb_reg', 'livre']);
+
+let E = {
+    step: 'nome', nome: '', wa: '', tipo: null, veiculo: 'moto',
+    col: { cid: '', end: '' }, ent: { cid: '', end: '' },
+    dest: { nome: '', tel: '' }, mb: { reg: '' },
+    outraPessoa: false,
+    valor: 0, distancia: 0, pix: '', esperandoAt: false, atEntrou: false,
+    pagConfirmado: false, ant: null
+};
+let arquivoPend = null, pollingAtivo = false, ultimaMsgAtId = '', pixStr = '';
+
+// ── Cálculo de preço ───────────────────────────────────────
+function calcularPreco(distanciaKm, veiculo) {
+    const km     = parseFloat(distanciaKm) || 0;
+    const v      = veiculo || 'moto';
+    const limite = PRICING_CONFIG.limiteKmMinimo;
+    const minimo = PRICING_CONFIG.valorMinimoAte7km[v];
+    const porKm  = PRICING_CONFIG.valorPorKm[v];
+    const preco  = km <= limite ? minimo : km * porKm;
+    return Math.min(Math.round(preco * 100) / 100, PRICING_CONFIG.valorMaximo);
+}
+
+// ── Geocodificação via Nominatim ───────────────────────────
+const _geocodeCache = {};
+async function geocodificar(endereco) {
+    const key = `gc_${endereco}`;
+    if (_geocodeCache[key]) return _geocodeCache[key];
+    const url = `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(endereco)}&format=json&countrycodes=br&limit=1`;
+    const res  = await fetch(url, { headers: { 'User-Agent': 'NGExpress/1.0' } });
+    if (!res.ok) throw new Error(`Geocodificação falhou (HTTP ${res.status})`);
+    const data = await res.json();
+    if (!data.length) throw new Error(`Endereço não encontrado: "${endereco}"`);
+    const resultado = { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+    _geocodeCache[key] = resultado;
+    return resultado;
+}
+
+// ── Rota real via HERE Maps ────────────────────────────────
+async function calcularRotaHere(origem, destino) {
+    const url = `https://router.hereapi.com/v8/routes?transportMode=car&origin=${origem.lat},${origem.lng}&destination=${destino.lat},${destino.lng}&return=summary&apikey=${HERE_API_KEY}`;
+    const res  = await fetch(url);
+    if (!res.ok) throw new Error('Erro ao calcular rota com HERE Maps');
+    const data = await res.json();
+    const section = data.routes?.[0]?.sections?.[0];
+    if (!section) throw new Error('Nenhuma rota encontrada entre os endereços');
+    const km      = section.summary.length / 1000;
+    const minutos = Math.round(section.summary.duration / 60);
+    return {
+        distanciaKm:    km,
+        distanciaTexto: `${km.toFixed(1)} km`,
+        duracaoTexto:   minutos < 60 ? `${minutos} min` : `${Math.floor(minutos/60)}h ${minutos%60}min`
+    };
+}
+
+// ── API interna ────────────────────────────────────────────
+async function api(m, r, b) {
+    try {
+        const o = { method: m, headers: { 'Content-Type': 'application/json' } };
+        if (b) o.body = JSON.stringify(b);
+        const res = await fetch(r, o);
+        return res.ok ? res.json() : null;
+    } catch (e) { return null; }
+}
+const GET     = (r)    => api('GET',   r);
+const POST    = (r, b) => api('POST',  r, b);
+const PATCH   = (r, b) => api('PATCH', r, b);
+const savMsg  = (tipo, texto, at) => POST(`/api/conv/${meuId}/msgs`, { tipo, texto, atendente: at || '' });
+const saveConv = d => PATCH(`/api/conv/${meuId}`, d);
+
+// ── DOM helpers ────────────────────────────────────────────
+const msgsEl  = document.getElementById('msgs');
+const campoEl = document.getElementById('campo');
+const benvEl  = document.getElementById('benv');
+const bclipEl = document.getElementById('bclip');
+
+function hora() { return new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }); }
+
+function atualizarInput() {
+    const ok = DIGITAVEIS.has(E.step);
+    campoEl.disabled = !ok;
+    benvEl.disabled  = !ok;
+    bclipEl.disabled = !(E.step === 'aguard_pag' || E.step === 'livre' || E.step === 'fim');
+    if (ok) campoEl.focus();
+}
+
+function addMsg(html, lado = 'bot', opcoes = null, salvar = true) {
+    const div = document.createElement('div');
+    div.className = `msg ${lado}`;
+    const bal = document.createElement('div');
+    bal.className = 'bal';
+    bal.innerHTML = html;
+    div.appendChild(bal);
+    const h = document.createElement('div');
+    h.className = 'hr';
+    h.textContent = hora();
+    div.appendChild(h);
+    if (opcoes) {
+        const row = document.createElement('div');
+        row.className = 'opts';
+        opcoes.forEach(op => {
+            const btn = document.createElement('button');
+            btn.className = 'ob';
+            btn.textContent = op.t;
+            btn.onclick = () => {
+                row.querySelectorAll('button').forEach(b => b.disabled = true);
+                addMsg(op.t, 'usr');
+                op.fn();
+            };
+            row.appendChild(btn);
+        });
+        div.appendChild(row);
+    }
+    msgsEl.appendChild(div);
+    msgsEl.scrollTop = msgsEl.scrollHeight;
+    if (lado === 'bot' && salvar) savMsg('bot', html.replace(/<[^>]+>/g, ''));
+}
+
+function typing(cb, delay = 1200) {
+    const d = document.createElement('div');
+    d.className = 'msg bot'; d.id = 'typing';
+    d.innerHTML = '<div class="typing"><span></span><span></span><span></span></div>';
+    msgsEl.appendChild(d);
+    msgsEl.scrollTop = msgsEl.scrollHeight;
+    setTimeout(() => {
+        const t = document.getElementById('typing');
+        if (t) t.remove();
+        cb();
+        atualizarInput();
+    }, delay);
+}
+
+function addImgMsg(b64, nome) {
+    const div = document.createElement('div');
+    div.className = 'msg usr';
+    const bal = document.createElement('div');
+    bal.className = 'bal';
+    const img = document.createElement('img');
+    img.className = 'imgp'; img.src = b64;
+    img.onclick = () => abrirLB(b64);
+    bal.appendChild(img);
+    const lbl = document.createElement('div');
+    lbl.style.cssText = 'font-size:.7rem;color:var(--c2);margin-top:4px';
+    lbl.textContent = '📎 ' + nome;
+    bal.appendChild(lbl);
+    div.appendChild(bal);
+    const h = document.createElement('div');
+    h.className = 'hr'; h.textContent = hora();
+    div.appendChild(h);
+    msgsEl.appendChild(div);
+    msgsEl.scrollTop = msgsEl.scrollHeight;
+}
+
+function abrirLB(src) { document.getElementById('lbImg').src = src; document.getElementById('lb').style.display = 'flex'; }
+function fecharLB()   { document.getElementById('lb').style.display = 'none'; }
+document.querySelector('.lb-x')?.addEventListener('click', fecharLB);
+document.getElementById('lb')?.addEventListener('click', e => { if (e.target === document.getElementById('lb')) fecharLB(); });
+
+// ── Upload ─────────────────────────────────────────────────
+document.getElementById('finp').addEventListener('change', e => {
+    const f = e.target.files[0];
+    if (!f) return;
+    if (f.size > 5 * 1024 * 1024) { alert('Arquivo muito grande. Máximo 5MB.'); return; }
+    const r = new FileReader();
+    r.onload = ev => { arquivoPend = { b64: ev.target.result, nome: f.name, mime: f.type }; mostrarPreview(); };
+    r.readAsDataURL(f);
+    e.target.value = '';
+});
+
+function mostrarPreview() {
+    removerPreview();
+    const p = document.createElement('div');
+    p.className = 'prev-up'; p.id = 'prevUp';
+    const img = document.createElement('img'); img.src = arquivoPend.b64;
+    const info = document.createElement('div'); info.className = 'prev-info';
+    info.innerHTML = `<div class="prev-nome">${arquivoPend.nome}</div><div class="prev-tipo">Clique enviar para confirmar</div>`;
+    const x = document.createElement('button'); x.className = 'prev-x'; x.textContent = '✕';
+    x.onclick = () => { arquivoPend = null; removerPreview(); };
+    p.appendChild(img); p.appendChild(info); p.appendChild(x);
+    document.querySelector('.ia').appendChild(p);
+}
+function removerPreview() { const e = document.getElementById('prevUp'); if (e) e.remove(); }
+
+async function enviarArquivo() {
+    if (!arquivoPend) return;
+    const { b64, nome, mime } = arquivoPend;
+    addImgMsg(b64, nome);
+    await POST(`/api/conv/${meuId}/arq`, { nome, mime, dados: b64 });
+    await savMsg('user_img', '📎 Comprovante: ' + nome);
+    arquivoPend = null; removerPreview();
+    typing(() => addMsg('📎 Comprovante recebido! O atendente irá verificar em breve.'), 800);
+}
+
+// ── PIX display — Mercado Pago ────────────────────────────
+function exibirPix(qrCode, qrCodeBase64, valor) {
+    pixStr = qrCode;
+    const div = document.createElement('div');
+    div.className = 'msg bot';
+    const w = document.createElement('div');
+
+    // Monta imagem do QR Code: usa base64 do MP se disponível
+    const qrImgHtml = qrCodeBase64
+        ? `<div class="cpix-qr"><img src="data:image/png;base64,${qrCodeBase64}" alt="QR Code PIX"></div>`
+        : `<div class="cpix-qr" id="qrW"></div>`;
+
+    w.innerHTML = `<div class="cpix">
+        <div class="cpix-h">
+            <div class="cpix-ic">💚</div>
+            <div><div class="cpix-t">Pagamento via PIX</div><div class="cpix-s">Mercado Pago • Escaneie ou copie</div></div>
+        </div>
+        <div class="cpix-v">R$ ${parseFloat(valor).toFixed(2).replace('.', ',')}</div>
+        ${qrImgHtml}
+        <div class="cpix-cod" id="pixCod" onclick="copiarPix()">${qrCode}</div>
+        <div class="cpix-hint">👆 Toque no código para copiar</div>
+    </div>`;
+    div.appendChild(w);
+    const h = document.createElement('div');
+    h.className = 'hr'; h.textContent = hora();
+    div.appendChild(h);
+    msgsEl.appendChild(div);
+    msgsEl.scrollTop = msgsEl.scrollHeight;
+    savMsg('bot', `PIX R$ ${valor} gerado`);
+}
+
+window.copiarPix = function() {
+    const el = document.getElementById('pixCod');
+    if (!el) return;
+    navigator.clipboard?.writeText(pixStr).then(() => {
+        el.textContent = '✅ Copiado!';
+        setTimeout(() => el.textContent = pixStr, 2500);
+    });
+};
+
+function bannerAguardando() {
+    const b = document.createElement('div');
+    b.className = 'bpag'; b.id = 'bpag';
+    b.innerHTML = '<strong>⏳ Aguardando pagamento PIX</strong><span>Após pagar o valor será confirmado automaticamente.<br>Você também pode enviar o comprovante pelo clipe 📎</span><div class="pdots"><i></i><i></i><i></i></div>';
+    msgsEl.appendChild(b);
+    msgsEl.scrollTop = msgsEl.scrollHeight;
+}
+
+// ── FLUXO ──────────────────────────────────────────────────
+async function iniciar() {
+    await POST('/api/conv', { id: meuId });
+    E.step = 'nome'; atualizarInput();
+    typing(() => addMsg('👋 Olá! Bem-vindo(a) à <strong>N&G Express</strong>! 🚚<br><br>Qual é o seu <strong>nome</strong>?'), 800);
+}
+
+function pedirWA() {
+    E.step = 'wa'; atualizarInput();
+    typing(() => addMsg(`Prazer, <strong>${E.nome}</strong>! 😊<br><br>📱 Qual é o seu <strong>número de WhatsApp</strong>?<br><small style="color:#667781">Ex: (47) 99999-9999</small>`), 800);
+}
+
+async function aposId() {
+    await saveConv({ nome: E.nome, whatsapp: E.wa });
+    const ant = await GET(`/api/historico?nome=${encodeURIComponent(E.nome)}&whatsapp=${encodeURIComponent(E.wa)}&excluir=${meuId}`);
+    if (ant && (ant.info?.coleta?.cidade || ant.info?.entrega?.cidade)) {
+        E.ant = ant; E.tipo = 'cliente'; E.step = 'menu_ret'; atualizarInput();
+        const co  = ant.info.coleta?.cidade  || '—';
+        const en  = ant.info.entrega?.cidade || '—';
+        const eco = ant.info.coleta?.endereco  ? `<br><small style="color:#667781">${ant.info.coleta.endereco}</small>`  : '';
+        const een = ant.info.entrega?.endereco ? `<br><small style="color:#667781">${ant.info.entrega.endereco}</small>` : '';
+        const dest = ant.info.destinatario?.nome ? `<br>👤 <strong>${ant.info.destinatario.nome}</strong>${ant.info.destinatario.tel ? ' • ' + ant.info.destinatario.tel : ''}` : '';
+        typing(() => addMsg(
+            `Que bom ter você de volta, <strong>${E.nome}</strong>! 🎉<br><br>Última entrega:<br><br>📍 <strong>Coleta:</strong> ${co}${eco}<br>📍 <strong>Entrega:</strong> ${en}${een}${dest}<br><br>Deseja usar esses endereços novamente?`,
+            'bot', [
+                { t: '✅ Sim, usar esses endereços', fn: usarAnt },
+                { t: '❌ Não, informar novos',       fn: novoEnd }
+            ]
+        ), 1000);
+    } else { menu(); }
+}
+
+function usarAnt() {
+    E.col  = { ...E.ant.info.coleta }       || { cid: '', end: '' };
+    E.ent  = { ...E.ant.info.entrega }      || { cid: '', end: '' };
+    E.dest = { ...E.ant.info.destinatario } || { nome: '', tel: '' };
+    E.step = 'auto'; atualizarInput();
+    typing(() => calcRota(), 600);
+}
+
+function novoEnd() { E.step = 'col_cid'; atualizarInput(); typing(() => addMsg('📍 Qual a <strong>cidade de coleta</strong>?'), 600); }
+
+function menu() {
+    E.step = 'menu'; atualizarInput();
+    typing(() => addMsg('Como posso ajudar você hoje?', 'bot', [
+        { t: '📦 Sou Cliente',  fn: fluxoCliente },
+        { t: '🛵 Sou Motoboy', fn: fluxoMotoboy }
+    ]), 800);
+}
+
+function fluxoCliente() {
+    E.tipo = 'cliente'; E.step = 'menu_cli'; atualizarInput();
+    typing(() => addMsg('O que você precisa?', 'bot', [
+        { t: '🚚 Solicitar Entrega',    fn: solicitar },
+        { t: '💬 Falar com Atendente', fn: falarAt }
+    ]), 600);
+}
+
+function solicitar() { E.step = 'col_cid'; atualizarInput(); typing(() => addMsg('📍 Qual a <strong>cidade de coleta</strong>?'), 600); }
+
+async function falarAt() {
+    await saveConv({ userType: 'cliente' });
+    E.step = 'espera_at'; E.esperandoAt = true; atualizarInput();
+    typing(() => {
+        addMsg('✅ Solicitação enviada!<br><br>⏳ Aguardando um atendente disponível...');
+        const b = document.createElement('div');
+        b.className = 'besp'; b.id = 'besp';
+        b.textContent = '⏳ Você será notificado assim que o atendente entrar na conversa.';
+        msgsEl.appendChild(b); msgsEl.scrollTop = msgsEl.scrollHeight;
+        iniciarPolling();
+    }, 1000);
+}
+
+async function fluxoMotoboy() {
+    await saveConv({ userType: 'motoboy' });
+    E.tipo = 'motoboy'; E.step = 'mb_reg'; atualizarInput();
+    typing(() => addMsg(`🛵 Olá <strong>${E.nome}</strong>!<br><br>📍 Em qual <strong>região</strong> você atua?<br><small style="color:#667781">Ex: Vale do Itajaí, Litoral, etc</small>`), 800);
+}
+
+function perguntarReceptor() {
+    E.step = 'quem_recebe'; atualizarInput();
+    typing(() => addMsg('👤 Quem irá <strong>receber</strong> a entrega?', 'bot', [
+        { t: '🙋 Serei eu',     fn: receptorSouEu },
+        { t: '👥 Outra pessoa', fn: receptorOutro  }
+    ]), 700);
+}
+
+function receptorSouEu() {
+    E.outraPessoa = false; E.dest.nome = E.nome; E.dest.tel = E.wa;
+    calcRota();
+}
+
+function receptorOutro() {
+    E.outraPessoa = true; E.step = 'dest_nome'; atualizarInput();
+    typing(() => addMsg('👤 Qual o <strong>nome de quem vai receber</strong>?'), 700);
+}
+
+// ── calcRota ───────────────────────────────────────────────
+async function calcRota() {
+    E.step = 'calc'; atualizarInput();
+    const endColeta  = E.col.end ? `${E.col.end}, ${E.col.cid}, Brasil` : `${E.col.cid}, Brasil`;
+    const endEntrega = E.ent.end ? `${E.ent.end}, ${E.ent.cid}, Brasil` : `${E.ent.cid}, Brasil`;
+
+    const d = document.createElement('div');
+    d.className = 'msg bot'; d.id = 'typing';
+    d.innerHTML = '<div class="typing"><span></span><span></span><span></span></div>';
+    msgsEl.appendChild(d); msgsEl.scrollTop = msgsEl.scrollHeight;
+
+    try {
+        const [coordColeta, coordEntrega] = await Promise.all([geocodificar(endColeta), geocodificar(endEntrega)]);
+        const rota  = await calcularRotaHere(coordColeta, coordEntrega);
+        const preco = calcularPreco(rota.distanciaKm, 'moto');
+        E.valor = preco; E.distancia = rota.distanciaKm;
+
+        const t = document.getElementById('typing'); if (t) t.remove();
+
+        let r = `✅ <strong>ROTA CALCULADA</strong><br><br>`;
+        r += `📏 ${rota.distanciaTexto} &nbsp;•&nbsp; ⏱️ ${rota.duracaoTexto} &nbsp;•&nbsp; 💰 <strong>R$ ${preco.toFixed(2).replace('.', ',')}</strong><br><br>`;
+        r += `📍 Coleta: ${E.col.cid}`;
+        if (E.col.end) r += `<br><small style="color:#667781">${E.col.end}</small>`;
+        r += `<br>📍 Entrega: ${E.ent.cid}`;
+        if (E.ent.end) r += `<br><small style="color:#667781">${E.ent.end}</small>`;
+        if (E.dest.nome) r += `<br><br>👤 Receptor: <strong>${E.dest.nome}</strong>${E.dest.tel ? ' • ' + E.dest.tel : ''}`;
+
+        addMsg(r, 'bot', [
+            { t: '✅ Confirmar e pagar', fn: confirmarPagar },
+            { t: '❌ Cancelar',          fn: cancelar }
+        ]);
+    } catch (err) {
+        const t = document.getElementById('typing'); if (t) t.remove();
+        addMsg(
+            `⚠️ Não consegui calcular a rota automaticamente.<br><br><small style="color:#667781">Motivo: ${err.message}</small><br><br>Entre em contato pelo WhatsApp para receber seu orçamento! 😊`,
+            'bot', [{ t: '💬 Falar com Atendente', fn: falarAt }]
+        );
+    }
+    E.step = 'confirm'; atualizarInput();
+}
+
+// ── confirmarPagar — chama API do servidor que chama MP ───
+async function confirmarPagar() {
+    E.step = 'aguard_pag'; atualizarInput();
+
+    // Salva dados da entrega na conversa
+    await saveConv({
+        userType: 'cliente', valor: E.valor,
+        distancia: E.distancia, veiculo: E.veiculo,
+        aguardandoConfirmacao: true,
+        coleta:       { cidade: E.col.cid, endereco: E.col.end },
+        entrega:      { cidade: E.ent.cid, endereco: E.ent.end },
+        destinatario: { nome: E.dest.nome, tel: E.dest.tel }
+    });
+
+    // Mostra typing enquanto gera PIX no MP
+    const d = document.createElement('div');
+    d.className = 'msg bot'; d.id = 'typing';
+    d.innerHTML = '<div class="typing"><span></span><span></span><span></span></div>';
+    msgsEl.appendChild(d); msgsEl.scrollTop = msgsEl.scrollHeight;
+
+    try {
+        // Chama o servidor para gerar cobrança PIX no Mercado Pago
+        const resp = await fetch('/api/pix/criar', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                convId:      meuId,
+                valor:       E.valor,
+                nomeCliente: E.nome,
+            })
+        });
+
+        const t = document.getElementById('typing'); if (t) t.remove();
+
+        if (!resp.ok) {
+            const err = await resp.json().catch(() => ({}));
+            throw new Error(err.erro || `HTTP ${resp.status}`);
+        }
+
+        const dados = await resp.json();
+
+        addMsg('💳 Realize o pagamento via PIX para confirmar sua entrega:');
+        setTimeout(() => {
+            exibirPix(dados.qrCode, dados.qrCodeBase64, dados.valor);
+            setTimeout(() => { bannerAguardando(); iniciarPolling(); }, 500);
+        }, 400);
+
+    } catch (err) {
+        const t = document.getElementById('typing'); if (t) t.remove();
+        addMsg(
+            `⚠️ Não foi possível gerar o PIX agora.<br><br><small style="color:#667781">${err.message}</small><br><br>Entre em contato com o atendente para finalizar o pagamento.`,
+            'bot', [{ t: '💬 Falar com Atendente', fn: falarAt }]
+        );
+        E.step = 'menu_cli'; atualizarInput();
+    }
+}
+
+function cancelar() {
+    E.step = 'menu_cli'; E.valor = null; E.distancia = 0; E.outraPessoa = false;
+    E.col = { cid: '', end: '' }; E.ent = { cid: '', end: '' }; E.dest = { nome: '', tel: '' };
+    atualizarInput();
+    typing(() => addMsg('❌ Solicitação cancelada. Deseja fazer uma nova solicitação?', 'bot', [
+        { t: '📦 Nova Solicitação',     fn: solicitar },
+        { t: '💬 Falar com Atendente', fn: falarAt }
+    ]), 600);
+}
+
+// ── Processar input ────────────────────────────────────────
+async function processar(txt) {
+    const msg = txt.trim();
+    if (!msg || !DIGITAVEIS.has(E.step)) return;
+    const div = document.createElement('div');
+    div.className = 'msg usr';
+    div.innerHTML = `<div class="bal">${msg}</div><div class="hr">${hora()}</div>`;
+    msgsEl.appendChild(div); msgsEl.scrollTop = msgsEl.scrollHeight;
+    await savMsg('user', msg);
+    campoEl.value = '';
+
+    switch (E.step) {
+        case 'nome':     E.nome = msg; pedirWA(); break;
+        case 'wa':       E.wa = msg; atualizarInput(); aposId(); break;
+        case 'col_cid':  E.col.cid = msg; E.step = 'ent_cid'; atualizarInput(); typing(() => addMsg(`✅ Coleta: <strong>${msg}</strong><br><br>📍 Qual a <strong>cidade de entrega</strong>?`)); break;
+        case 'ent_cid':  E.ent.cid = msg; E.step = 'col_end'; atualizarInput(); typing(() => addMsg('🏠 Endereço completo de <strong>coleta</strong><br><small style="color:#667781">Rua, Número, Bairro</small>')); break;
+        case 'col_end':  E.col.end = msg; E.step = 'ent_end'; atualizarInput(); typing(() => addMsg('🏠 Endereço completo de <strong>entrega</strong><br><small style="color:#667781">Rua, Número, Bairro</small>')); break;
+        case 'ent_end':  E.ent.end = msg; perguntarReceptor(); break;
+        case 'dest_nome': E.dest.nome = msg; E.step = 'dest_tel'; atualizarInput(); typing(() => addMsg(`📱 Qual o <strong>WhatsApp de ${msg}</strong>?<br><small style="color:#667781">Ex: (47) 99999-9999</small>`)); break;
+        case 'dest_tel': E.dest.tel = msg; calcRota(); break;
+        case 'mb_reg':
+            E.mb.reg = msg; E.step = 'espera_at'; E.esperandoAt = true; atualizarInput();
+            await saveConv({ motoboy: { regiao: msg } });
+            typing(() => {
+                addMsg(`✅ Obrigado, <strong>${E.nome}</strong>!<br><br>⏳ Aguardando um atendente disponível...`);
+                const b = document.createElement('div'); b.className = 'besp'; b.id = 'besp';
+                b.textContent = '⏳ Você será notificado assim que o atendente entrar na conversa.';
+                msgsEl.appendChild(b); msgsEl.scrollTop = msgsEl.scrollHeight;
+                iniciarPolling();
+            }); break;
+        case 'livre': break;
+    }
+}
+
+// ── Polling ────────────────────────────────────────────────
+function iniciarPolling() { if (pollingAtivo) return; pollingAtivo = true; setInterval(poll, 2500); }
+
+async function poll() {
+    const conv = await GET(`/api/conv/${meuId}`);
+    if (!conv) return;
+    const info = conv.info, msgs = conv.msgs || [];
+
+    if (info.atendenteAtivo && !E.atEntrou && E.step === 'espera_at') {
+        E.atEntrou = true; E.step = 'livre'; atualizarInput();
+        const b = document.getElementById('besp'); if (b) b.remove();
+        const div = document.createElement('div'); div.className = 'msg bot';
+        div.innerHTML = `<div class="bal" style="background:#e8f5e9;border-left:3px solid #4caf50;border-bottom-left-radius:4px">✅ <strong>${info.atendenteAtivo}</strong> entrou na conversa! Pode digitar. 😊</div><div class="hr">${hora()}</div>`;
+        msgsEl.appendChild(div); msgsEl.scrollTop = msgsEl.scrollHeight;
+    }
+
+    if (info.pagamentoConfirmado && !E.pagConfirmado) {
+        E.pagConfirmado = true; E.step = 'fim'; atualizarInput();
+        const b = document.getElementById('bpag'); if (b) b.remove();
+        const div = document.createElement('div'); div.className = 'msg bot';
+        div.innerHTML = `<div class="bal" style="background:#e8f5e9;border-left:3px solid #4caf50;border-bottom-left-radius:4px">✅ <strong>Pagamento confirmado!</strong><br><br>🚚 Sua entrega foi registrada!<br><br>💚 Obrigado, <strong>${E.nome}</strong>!<br><br>Deseja fazer uma nova solicitação?</div><div class="hr">${hora()}</div>`;
+        msgsEl.appendChild(div);
+        const row = document.createElement('div'); row.className = 'opts';
+        const btn = document.createElement('button'); btn.className = 'ob'; btn.textContent = '📦 Nova Solicitação';
+        btn.onclick = () => {
+            row.querySelectorAll('button').forEach(b => b.disabled = true);
+            addMsg('📦 Nova Solicitação', 'usr');
+            E.step = 'menu_cli'; E.pagConfirmado = false; E.outraPessoa = false;
+            E.valor = null; E.col = { cid: '', end: '' }; E.ent = { cid: '', end: '' }; E.dest = { nome: '', tel: '' };
+            atualizarInput();
+            typing(() => addMsg('O que você precisa?', 'bot', [
+                { t: '🚚 Solicitar Entrega',    fn: solicitar },
+                { t: '💬 Falar com Atendente', fn: falarAt }
+            ]), 600);
+        };
+        row.appendChild(btn); div.appendChild(row);
+        msgsEl.scrollTop = msgsEl.scrollHeight;
+    }
+
+    if (E.atEntrou || info.atendenteAtivo) {
+        const atMsgs = msgs.filter(m => m.tipo === 'atendente');
+        atMsgs.forEach(m => {
+            if (m.id > ultimaMsgAtId) {
+                const div = document.createElement('div'); div.className = 'msg bot';
+                div.innerHTML = `<div class="bal" style="background:#fff3e0;border-left:3px solid #ff9800;border-bottom-left-radius:4px">👩‍💼 <strong>${m.atendente}:</strong> ${m.texto}</div><div class="hr">${hora()}</div>`;
+                msgsEl.appendChild(div); msgsEl.scrollTop = msgsEl.scrollHeight;
+            }
+        });
+        if (atMsgs.length > 0) ultimaMsgAtId = atMsgs[atMsgs.length - 1].id;
+    }
+}
+
+// ── Eventos ────────────────────────────────────────────────
+benvEl.addEventListener('click', async () => {
+    if (arquivoPend) { await enviarArquivo(); return; }
+    const v = campoEl.value.trim(); if (v) await processar(v);
+});
+campoEl.addEventListener('keypress', async e => {
+    if (e.key === 'Enter') { e.preventDefault(); const v = campoEl.value.trim(); if (v) await processar(v); }
+});
+window.addEventListener('DOMContentLoaded', iniciar);
+</script>
+</body>
+</html>

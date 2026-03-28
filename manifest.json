@@ -1,0 +1,32 @@
+{
+  "manifest_version": 3,
+  "name": "N&G Express - Atendimento WhatsApp",
+  "version": "1.0.0",
+  "description": "Chatbot para atendimento de entregas N&G Express",
+  "permissions": [
+    "storage",
+    "activeTab"
+  ],
+  "host_permissions": [
+    "https://web.whatsapp.com/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["https://web.whatsapp.com/*"],
+      "js": ["whatsapp-extension.js"],
+      "css": ["chatbot-style.css"],
+      "run_at": "document_end"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["chatbot.html", "chatbot-style.css"],
+      "matches": ["https://web.whatsapp.com/*"]
+    }
+  ],
+  "icons": {
+    "16": "icon16.png",
+    "48": "icon48.png",
+    "128": "icon128.png"
+  }
+}

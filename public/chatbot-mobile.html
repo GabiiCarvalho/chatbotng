@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
+    <title>N&G Express - Chatbot</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background: #f0f2f5;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header */
+        .header {
+            background: #075e54;
+            color: white;
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .back-btn {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 5px;
+        }
+
+        .header-info {
+            flex: 1;
+        }
+
+        .header-info h3 {
+            font-size: 1rem;
+            margin: 0;
+        }
+
+        .header-info p {
+            font-size: 0.7rem;
+            opacity: 0.9;
+            margin: 2px 0 0;
+        }
+
+        .whatsapp-icon {
+            background: #25d366;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
+
+        /* Área de Mensagens */
+        .messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 15px;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000" opacity="0.03"><path fill="%23000" d="M0,0L1000,0L1000,1000L0,1000L0,0Z M500,500L800,200L200,200L500,500Z"/></svg>');
+        }
+
+        .message {
+            margin-bottom: 12px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .message-bot {
+            align-items: flex-start;
+        }
+
+        .message-user {
+            align-items: flex-end;
+        }
+
+        .bubble {
+            max-width: 85%;
+            padding: 8px 12px;
+            border-radius: 18px;
+            font-size: 0.9rem;
+            line-height: 1.4;
+            word-wrap: break-word;
+        }
+
+        .message-bot .bubble {
+            background: white;
+            border-bottom-left-radius: 4px;
+            box-shadow: 0 1px 1px rgba(0,0,0,0.1);
+        }
+
+        .message-user .bubble {
+            background: #dcf8c6;
+            border-bottom-right-radius: 4px;
+        }
+
+        .time {
+            font-size: 0.6rem;
+            color: #999;
+            margin-top: 3px;
+            padding: 0 5px;
+        }
+
+        /* Botões */
+        .options {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+            flex-wrap: wrap;
+        }
+
+        .option-btn {
+            background: #f0f2f5;
+            border: 1px solid #075e54;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            color: #075e54;
+            cursor: pointer;
+        }
+
+        .option-btn:active {
+            background: #075e54;
+            color: white;
+        }
+
+        /* Input */
+        .input-area {
+            background: #f0f2f5;
+            padding: 10px 15px;
+            border-top: 1px solid #e0e0e0;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .input-field {
+            flex: 1;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            background: white;
+        }
+
+        .input-field:focus {
+            outline: none;
+        }
+
+        .send-btn {
+            background: #075e54;
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            border: none;
+            color: white;
+            cursor: pointer;
+        }
+
+        .send-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* Typing */
+        .typing {
+            display: inline-flex;
+            gap: 4px;
+            padding: 8px 12px;
+            background: white;
+            border-radius: 18px;
+        }
+
+        .typing span {
+            width: 6px;
+            height: 6px;
+            background: #075e54;
+            border-radius: 50%;
+            animation: bounce 1.4s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 60%, 100% { transform: translateY(0); }
+            30% { transform: translateY(-8px); }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <button class="back-btn" onclick="history.back()">←</button>
+        <div class="header-info">
+            <h3>N&G Express</h3>
+            <p>Online • Atendimento 24h</p>
+        </div>
+        <div class="whatsapp-icon" onclick="window.location.href='https://wa.me/5547999123260'">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
+                <path d="M12 2C6.48 2 2 6.48 2 12c0 1.82.48 3.53 1.33 5.02L2 22l4.98-1.33C8.47 21.52 10.18 22 12 22c5.52 0 10-4.48 10-10S17.52 2 12 2z"/>
+            </svg>
+        </div>
+    </div>
+
+    <div class="messages" id="messages"></div>
+
+    <div class="input-area">
+        <input type="text" class="input-field" id="input" placeholder="Digite sua mensagem..." autocomplete="off">
+        <button class="send-btn" id="sendBtn">➤</button>
+    </div>
+
+    <script>
+        const ATENDENTES = ['Gabriele', 'Natanael'];
+        let state = {
+            step: 'initial',
+            atendente: null,
+            userType: null,
+            coleta: { cidade: '', endereco: '' },
+            entrega: { cidade: '', endereco: '' },
+            motoboy: { nome: '', regiao: '' }
+        };
+
+        function getTime() {
+            return new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        }
+
+        function addMsg(content, type = 'bot') {
+            const div = document.createElement('div');
+            div.className = `message message-${type}`;
+            div.innerHTML = `
+                <div class="bubble">${content}</div>
+                <div class="time">${getTime()}</div>
+            `;
+            document.getElementById('messages').appendChild(div);
+            div.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function addOptions(options) {
+            const lastMsg = document.querySelector('.messages .message:last-child');
+            if (lastMsg && lastMsg.classList.contains('message-bot')) {
+                const optsDiv = document.createElement('div');
+                optsDiv.className = 'options';
+                options.forEach(opt => {
+                    const btn = document.createElement('button');
+                    btn.className = 'option-btn';
+                    btn.textContent = opt.text;
+                    btn.onclick = () => {
+                        addMsg(opt.text, 'user');
+                        opt.action();
+                    };
+                    optsDiv.appendChild(btn);
+                });
+                lastMsg.appendChild(optsDiv);
+            }
+        }
+
+        function showTyping() {
+            const typingDiv = document.createElement('div');
+            typingDiv.className = 'message message-bot';
+            typingDiv.id = 'typing';
+            typingDiv.innerHTML = `<div class="typing"><span></span><span></span><span></span></div>`;
+            document.getElementById('messages').appendChild(typingDiv);
+            typingDiv.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function hideTyping() {
+            const typing = document.getElementById('typing');
+            if (typing) typing.remove();
+        }
+
+        function iniciar() {
+            state.atendente = ATENDENTES[Math.random() < 0.5 ? 0 : 1];
+            addMsg(`🎯 Você será atendido(a) por: <strong>${state.atendente}</strong>`);
+            addMsg(`💬 Chat Iniciado - ${getTime()}`);
+            addMsg(`👋 Olá! Bem-vindo(a) à N&G Express! 🚚`);
+            addMsg(`Meu nome é ${state.atendente}, como posso ajudar?`);
+            setTimeout(() => {
+                addMsg("Selecione uma opção:");
+                addOptions([
+                    { text: "📦 Sou Cliente", action: () => fluxoCliente() },
+                    { text: "🛵 Sou Motoboy", action: () => fluxoMotoboy() }
+                ]);
+            }, 500);
+        }
+
+        function fluxoCliente() {
+            state.userType = 'cliente';
+            addMsg("Como posso ajudar?");
+            addOptions([
+                { text: "💬 Falar com Atendente", action: () => falarAtendente() },
+                { text: "🚚 Solicitar Entrega", action: () => solicitarEntrega() }
+            ]);
+        }
+
+        function falarAtendente() {
+            addMsg("🔍 Aguarde um momento que logo uma atendente irá falar com você...");
+            setTimeout(() => {
+                state.atendente = ATENDENTES[Math.random() < 0.5 ? 0 : 1];
+                addMsg(`🎯 Você será atendido(a) por: <strong>${state.atendente}</strong>`);
+                addMsg(`Olá! Sou ${state.atendente}, em que posso ajudar?`);
+                state.step = 'aguardando';
+            }, 2000);
+        }
+
+        function solicitarEntrega() {
+            addMsg("📦 Vamos solicitar sua entrega!");
+            setTimeout(() => {
+                addMsg("📍 Qual a cidade de COLEÇÃO?");
+                state.step = 'cidade_coleta';
+            }, 500);
+        }
+
+        function fluxoMotoboy() {
+            state.userType = 'motoboy';
+            addMsg("🛵 Informe seu nome completo:");
+            state.step = 'motoboy_nome';
+        }
+
+        function calcularRota() {
+            showTyping();
+            setTimeout(() => {
+                hideTyping();
+                const dist = (Math.random() * 45 + 5).toFixed(1);
+                const tempo = Math.floor(dist * 2);
+                const valor = (dist * 2.8 + 8).toFixed(2);
+                addMsg(`✅ *ROTA CALCULADA*\n\n📏 Distância: ${dist} km\n⏱️ Tempo: ${tempo} min\n💰 Valor: R$ ${valor}\n\n📍 Coleta: ${state.coleta.cidade}\n📍 Entrega: ${state.entrega.cidade}`);
+                addOptions([
+                    { text: "✅ Confirmar", action: () => confirmar() },
+                    { text: "❌ Cancelar", action: () => cancelar() }
+                ]);
+                state.step = 'confirmacao';
+            }, 1500);
+        }
+
+        function confirmar() {
+            addMsg("✅ Entrega confirmada! Pedido registrado.");
+            addMsg("📱 Código de rastreio será enviado via WhatsApp.");
+            addMsg("💚 Agradecemos pela preferência!");
+            setTimeout(() => location.reload(), 4000);
+        }
+
+        function cancelar() {
+            addMsg("❌ Entrega cancelada.");
+            addMsg("💳 PIX: 00020126360014br.gov.bcb.pix011147999123260520400005303986540510.005802BR5913N&G Express6008Cidade62070503***6304E2F3");
+            addMsg("💡 Após pagamento, agendaremos sua entrega.");
+            setTimeout(() => location.reload(), 5000);
+        }
+
+        function processar(msg) {
+            switch(state.step) {
+                case 'cidade_coleta':
+                    state.coleta.cidade = msg;
+                    addMsg("📍 Qual a cidade de ENTREGA?");
+                    state.step = 'cidade_entrega';
+                    break;
+                case 'cidade_entrega':
+                    state.entrega.cidade = msg;
+                    addMsg("🏠 Endereço completo de COLETA:");
+                    state.step = 'endereco_coleta';
+                    break;
+                case 'endereco_coleta':
+                    state.coleta.endereco = msg;
+                    addMsg("🏠 Endereço completo de ENTREGA:");
+                    state.step = 'endereco_entrega';
+                    break;
+                case 'endereco_entrega':
+                    state.entrega.endereco = msg;
+                    calcularRota();
+                    break;
+                case 'motoboy_nome':
+                    state.motoboy.nome = msg;
+                    addMsg("📍 Região de atuação:");
+                    state.step = 'motoboy_regiao';
+                    break;
+                case 'motoboy_regiao':
+                    state.motoboy.regiao = msg;
+                    addMsg(`✅ Obrigado, ${state.motoboy.nome}!`);
+                    addMsg("🔍 Aguarde atendente...");
+                    setTimeout(() => {
+                        state.atendente = ATENDENTES[Math.random() < 0.5 ? 0 : 1];
+                        addMsg(`🎯 Você será atendido(a) por: ${state.atendente}`);
+                        addMsg(`Olá ${state.motoboy.nome}! Sou ${state.atendente}, em que posso ajudar?`);
+                        state.step = 'aguardando';
+                    }, 2000);
+                    break;
+                default:
+                    addMsg("❓ Opção inválida. Vamos recomeçar.");
+                    setTimeout(() => location.reload(), 2000);
+            }
+        }
+
+        // Inicialização
+        document.addEventListener('DOMContentLoaded', () => {
+            iniciar();
+            const input = document.getElementById('input');
+            const send = document.getElementById('sendBtn');
+            const sendMsg = () => {
+                const msg = input.value.trim();
+                if (msg) {
+                    addMsg(msg, 'user');
+                    processar(msg);
+                    input.value = '';
+                }
+            };
+            send.onclick = sendMsg;
+            input.onkeypress = (e) => { if (e.key === 'Enter') sendMsg(); };
+        });
+    </script>
+</body>
+</html>
