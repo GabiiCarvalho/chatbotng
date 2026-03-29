@@ -8,11 +8,43 @@
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 :root{--v:#075e54;--v2:#128c7e;--v3:#25d366;--vc:#dcf8c6;--bg:#f0f2f5;--br:#fff;--cin:#e9edef;--c2:#667781;--tx:#111b21}
-html,body{height:100%}
-body{font-family:'Plus Jakarta Sans',sans-serif;background:#e5ddd5;display:flex;justify-content:center;align-items:stretch;min-height:100vh}
-.tela{width:100%;max-width:900px;background:var(--br);display:flex;flex-direction:column;overflow:hidden;position:relative;min-height:100vh}
-@media(min-width:768px){body{align-items:center}.tela{box-shadow:0 0 60px rgba(0,0,0,.2)}}
+
+/* ── Tela cheia — igual ao painel ── */
+html, body {
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
+}
+
+body {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    background: #e5ddd5;
+    display: flex;
+    justify-content: center;
+    align-items: stretch;
+}
+
+.tela {
+    width: 100%;
+    max-width: 900px;
+    background: var(--br);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+    /* ocupa exatamente a altura da viewport */
+    height: 100vh;
+    height: 100dvh; /* suporte a mobile com barra de endereço retrátil */
+}
+
+@media(min-width: 768px) {
+    body { align-items: center; }
+    .tela { box-shadow: 0 0 60px rgba(0,0,0,.2); }
+}
+
 .tela::before{content:'';position:absolute;inset:0;background-image:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none'%3E%3Cg fill='%23075e54' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");pointer-events:none;z-index:0}
+
+/* ── Header fixo no topo ── */
 .hd{background:var(--v);padding:12px 20px;display:flex;align-items:center;gap:12px;position:relative;z-index:10;box-shadow:0 2px 8px rgba(0,0,0,.2);flex-shrink:0}
 .av{width:42px;height:42px;border-radius:50%;background:var(--v2);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
 .hd h3{color:#fff;font-size:.95rem;font-weight:700}
@@ -20,7 +52,22 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#e5ddd5;display:flex;
 .badge{margin-left:auto;background:var(--v3);color:#fff;font-size:.65rem;font-weight:600;padding:3px 10px;border-radius:20px;display:flex;align-items:center;gap:4px;white-space:nowrap}
 .dot{width:6px;height:6px;border-radius:50%;background:#fff;animation:p 2s infinite}
 @keyframes p{0%,100%{opacity:1}50%{opacity:.4}}
-.msgs{flex:1;overflow-y:auto;padding:16px 20px;display:flex;flex-direction:column;gap:4px;position:relative;z-index:1;background:var(--bg)}
+
+/* ── Área de mensagens — ocupa o espaço restante ── */
+.msgs{
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    position: relative;
+    z-index: 1;
+    background: var(--bg);
+    /* impede que o conteúdo empurre a tela para fora */
+    min-height: 0;
+}
+
 .msg{display:flex;flex-direction:column;animation:u .25s ease}
 @keyframes u{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 .bot{align-items:flex-start}.usr{align-items:flex-end}
@@ -35,7 +82,12 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#e5ddd5;display:flex;
 .typing span{width:7px;height:7px;border-radius:50%;background:var(--v2);animation:b 1.4s infinite ease-in-out}
 .typing span:nth-child(2){animation-delay:.2s}.typing span:nth-child(3){animation-delay:.4s}
 @keyframes b{0%,60%,100%{transform:translateY(0);opacity:.4}30%{transform:translateY(-7px);opacity:1}}
-.ia{background:var(--cin);padding:10px 12px;display:flex;align-items:center;gap:8px;position:relative;z-index:10;flex-shrink:0}
+
+/* ── Barra de input fixada na base ── */
+.ia{background:var(--cin);padding:10px 12px;display:flex;align-items:center;gap:8px;position:relative;z-index:10;flex-shrink:0;
+    /* safe-area no iPhone com notch/home bar */
+    padding-bottom: calc(10px + env(safe-area-inset-bottom));
+}
 .campo{flex:1;background:var(--br);border:none;border-radius:24px;padding:10px 16px;font-size:.9rem;font-family:'Plus Jakarta Sans',sans-serif;outline:none;color:var(--tx);min-width:0}
 .campo:disabled{background:#e0e0e0;color:#aaa;cursor:not-allowed}
 .bclip{width:40px;height:40px;border-radius:50%;background:transparent;border:none;color:var(--c2);cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:all .2s}
@@ -44,6 +96,8 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#e5ddd5;display:flex;
 .benv{width:44px;height:44px;border-radius:50%;background:var(--v);border:none;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;flex-shrink:0}
 .benv:hover{background:var(--v2)}.benv:disabled{background:#aaa;cursor:not-allowed}
 .imgp{max-width:100%;max-height:200px;border-radius:12px;object-fit:cover;cursor:pointer;display:block;margin-top:4px}
+
+/* ── Card PIX ── */
 .cpix{background:#fff;border-radius:16px;padding:16px;box-shadow:0 2px 16px rgba(0,0,0,.12);border:2px solid #43a047;width:100%}
 .cpix-h{display:flex;align-items:center;gap:8px;margin-bottom:8px}
 .cpix-ic{width:32px;height:32px;background:#e8f5e9;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
@@ -61,12 +115,16 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:#e5ddd5;display:flex;
 .pdots i{width:6px;height:6px;border-radius:50%;background:#43a047;animation:pd 1.4s infinite ease-in-out}
 .pdots i:nth-child(2){animation-delay:.2s}.pdots i:nth-child(3){animation-delay:.4s}
 @keyframes pd{0%,60%,100%{transform:scale(.6);opacity:.4}30%{transform:scale(1);opacity:1}}
+
+/* ── Preview de upload ── */
 .prev-up{position:absolute;bottom:68px;left:12px;right:12px;background:#fff;border-radius:12px;padding:10px 12px;display:flex;align-items:center;gap:10px;box-shadow:0 4px 20px rgba(0,0,0,.15);border:1px solid #e0e0e0;z-index:20}
 .prev-up img{width:52px;height:52px;object-fit:cover;border-radius:8px;flex-shrink:0}
 .prev-info{flex:1;min-width:0}
 .prev-nome{font-size:.75rem;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .prev-tipo{font-size:.65rem;color:var(--c2);margin-top:2px}
 .prev-x{background:none;border:none;color:var(--c2);cursor:pointer;font-size:18px;flex-shrink:0}
+
+/* ── Lightbox ── */
 .lb{position:fixed;inset:0;background:rgba(0,0,0,.88);display:flex;align-items:center;justify-content:center;z-index:999;padding:20px}
 .lb img{max-width:100%;max-height:90vh;border-radius:12px;object-fit:contain}
 .lb-x{position:absolute;top:16px;right:16px;background:rgba(255,255,255,.15);border:none;color:#fff;font-size:22px;cursor:pointer;width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center}
@@ -106,9 +164,7 @@ const PRICING_CONFIG = {
     valorMaximo:       500.00
 };
 
-// ── Sessão — reutiliza a mesma conversa se nome+tel já existirem ──
-// O ID é guardado no localStorage (persiste entre abas/recargas)
-// Se o servidor reconhecer nome+WA, o mesmo meuId é reutilizado
+// ── Sessão ─────────────────────────────────────────────────
 let meuId = localStorage.getItem('ngid');
 if (!meuId) {
     meuId = 'c' + Date.now() + Math.random().toString(36).slice(2, 6);
@@ -367,55 +423,37 @@ function pedirWA() {
 
 async function aposId() {
     await saveConv({ nome: E.nome, whatsapp: E.wa });
-
-    // Busca conversa anterior com mesmo nome + WhatsApp
     const ant = await GET(`/api/historico?nome=${encodeURIComponent(E.nome)}&whatsapp=${encodeURIComponent(E.wa)}&excluir=${meuId}`);
-
     if (ant && (ant.info?.coleta?.cidade || ant.info?.entrega?.cidade)) {
-        // ── Cliente retornando com endereços salvos ──
-        E.ant  = ant;
-        E.tipo = 'cliente';
-        E.step = 'menu_ret';
-        atualizarInput();
-
-        const co  = ant.info.coleta?.cidade   || '—';
-        const en  = ant.info.entrega?.cidade  || '—';
+        E.ant = ant; E.tipo = 'cliente'; E.step = 'menu_ret'; atualizarInput();
+        const co  = ant.info.coleta?.cidade  || '—';
+        const en  = ant.info.entrega?.cidade || '—';
         const eco = ant.info.coleta?.endereco  ? `<br><small style="color:#667781">${ant.info.coleta.endereco}</small>`  : '';
         const een = ant.info.entrega?.endereco ? `<br><small style="color:#667781">${ant.info.entrega.endereco}</small>` : '';
         const dest = ant.info.destinatario?.nome
             ? `<br>👤 <strong>${ant.info.destinatario.nome}</strong>${ant.info.destinatario.tel ? ' • ' + ant.info.destinatario.tel : ''}`
             : '';
-
         typing(() => addMsg(
             `Que bom ter você de volta, <strong>${E.nome}</strong>! 🎉<br><br>Sua última entrega foi:<br><br>📍 <strong>Coleta:</strong> ${co}${eco}<br>📍 <strong>Entrega:</strong> ${en}${een}${dest}<br><br>Os endereços são os <strong>mesmos</strong> desta vez?`,
             'bot',
             [
-                { t: '✅ Sim, mesmos endereços', fn: usarAnt  },
-                { t: '❌ Não, informar novos',   fn: novoEnd  }
+                { t: '✅ Sim, mesmos endereços', fn: usarAnt },
+                { t: '❌ Não, informar novos',   fn: novoEnd }
             ]
         ), 1000);
-    } else {
-        // Cliente novo → menu normal
-        menu();
-    }
+    } else { menu(); }
 }
 
-// Usa os endereços anteriores direto e vai para calcRota
 function usarAnt() {
-    E.col  = { cid: E.ant.info.coleta?.cidade   || '', end: E.ant.info.coleta?.endereco  || '' };
-    E.ent  = { cid: E.ant.info.entrega?.cidade  || '', end: E.ant.info.entrega?.endereco || '' };
+    E.col  = { cid: E.ant.info.coleta?.cidade  || '', end: E.ant.info.coleta?.endereco  || '' };
+    E.ent  = { cid: E.ant.info.entrega?.cidade || '', end: E.ant.info.entrega?.endereco || '' };
     E.dest = { nome: E.ant.info.destinatario?.nome || '', tel: E.ant.info.destinatario?.tel || '' };
-    E.tipo = 'cliente';
-    E.step = 'auto';
-    atualizarInput();
+    E.tipo = 'cliente'; E.step = 'auto'; atualizarInput();
     typing(() => calcRota(), 600);
 }
 
-// Informa novos endereços
 function novoEnd() {
-    E.tipo = 'cliente';
-    E.step = 'col_cid';
-    atualizarInput();
+    E.tipo = 'cliente'; E.step = 'col_cid'; atualizarInput();
     typing(() => addMsg('📍 Qual a <strong>cidade de coleta</strong>?'), 600);
 }
 
@@ -435,10 +473,7 @@ function fluxoCliente() {
     ]), 600);
 }
 
-function solicitar() {
-    E.step = 'col_cid'; atualizarInput();
-    typing(() => addMsg('📍 Qual a <strong>cidade de coleta</strong>?'), 600);
-}
+function solicitar() { E.step = 'col_cid'; atualizarInput(); typing(() => addMsg('📍 Qual a <strong>cidade de coleta</strong>?'), 600); }
 
 async function falarAt() {
     await saveConv({ userType: 'cliente' });
@@ -459,7 +494,6 @@ async function fluxoMotoboy() {
     typing(() => addMsg(`🛵 Olá <strong>${E.nome}</strong>!<br><br>📍 Em qual <strong>região</strong> você atua?<br><small style="color:#667781">Ex: Vale do Itajaí, Litoral, etc</small>`), 800);
 }
 
-// ── Pergunta quem recebe ───────────────────────────────────
 function perguntarReceptor() {
     E.step = 'quem_recebe'; atualizarInput();
     typing(() => addMsg('👤 Quem irá <strong>receber</strong> a entrega?', 'bot', [
@@ -469,9 +503,7 @@ function perguntarReceptor() {
 }
 
 function receptorSouEu() {
-    E.outraPessoa = false;
-    E.dest.nome   = E.nome;
-    E.dest.tel    = E.wa;
+    E.outraPessoa = false; E.dest.nome = E.nome; E.dest.tel = E.wa;
     calcRota();
 }
 
@@ -480,28 +512,20 @@ function receptorOutro() {
     typing(() => addMsg('👤 Qual o <strong>nome de quem vai receber</strong>?'), 700);
 }
 
-// ── calcRota ───────────────────────────────────────────────
 async function calcRota() {
     E.step = 'calc'; atualizarInput();
     const endColeta  = E.col.end ? `${E.col.end}, ${E.col.cid}, Brasil` : `${E.col.cid}, Brasil`;
     const endEntrega = E.ent.end ? `${E.ent.end}, ${E.ent.cid}, Brasil` : `${E.ent.cid}, Brasil`;
-
     const d = document.createElement('div');
     d.className = 'msg bot'; d.id = 'typing';
     d.innerHTML = '<div class="typing"><span></span><span></span><span></span></div>';
     msgsEl.appendChild(d); msgsEl.scrollTop = msgsEl.scrollHeight;
-
     try {
-        const [coordColeta, coordEntrega] = await Promise.all([
-            geocodificar(endColeta),
-            geocodificar(endEntrega)
-        ]);
+        const [coordColeta, coordEntrega] = await Promise.all([geocodificar(endColeta), geocodificar(endEntrega)]);
         const rota  = await calcularRotaHere(coordColeta, coordEntrega);
         const preco = calcularPreco(rota.distanciaKm, 'moto');
         E.valor = preco; E.distancia = rota.distanciaKm;
-
         const t = document.getElementById('typing'); if (t) t.remove();
-
         let r = `✅ <strong>ROTA CALCULADA</strong><br><br>`;
         r += `📏 ${rota.distanciaTexto} &nbsp;•&nbsp; ⏱️ ${rota.duracaoTexto} &nbsp;•&nbsp; 💰 <strong>R$ ${preco.toFixed(2).replace('.', ',')}</strong><br><br>`;
         r += `📍 Coleta: ${E.col.cid}`;
@@ -509,7 +533,6 @@ async function calcRota() {
         r += `<br>📍 Entrega: ${E.ent.cid}`;
         if (E.ent.end) r += `<br><small style="color:#667781">${E.ent.end}</small>`;
         if (E.dest.nome) r += `<br><br>👤 Receptor: <strong>${E.dest.nome}</strong>${E.dest.tel ? ' • ' + E.dest.tel : ''}`;
-
         addMsg(r, 'bot', [
             { t: '✅ Confirmar e pagar', fn: confirmarPagar },
             { t: '❌ Cancelar',          fn: cancelar }
@@ -524,10 +547,8 @@ async function calcRota() {
     E.step = 'confirm'; atualizarInput();
 }
 
-// ── Confirmar e gerar PIX no Mercado Pago ─────────────────
 async function confirmarPagar() {
     E.step = 'aguard_pag'; atualizarInput();
-
     await saveConv({
         userType: 'cliente', valor: E.valor,
         distancia: E.distancia, veiculo: E.veiculo,
@@ -536,33 +557,27 @@ async function confirmarPagar() {
         entrega:      { cidade: E.ent.cid, endereco: E.ent.end },
         destinatario: { nome: E.dest.nome, tel: E.dest.tel }
     });
-
     const d = document.createElement('div');
     d.className = 'msg bot'; d.id = 'typing';
     d.innerHTML = '<div class="typing"><span></span><span></span><span></span></div>';
     msgsEl.appendChild(d); msgsEl.scrollTop = msgsEl.scrollHeight;
-
     try {
         const resp = await fetch('/api/pix/criar', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ convId: meuId, valor: E.valor, nomeCliente: E.nome })
         });
-
         const t = document.getElementById('typing'); if (t) t.remove();
-
         if (!resp.ok) {
             const err = await resp.json().catch(() => ({}));
             throw new Error(err.erro || `HTTP ${resp.status}`);
         }
-
         const dados = await resp.json();
         addMsg('💳 Realize o pagamento via PIX para confirmar sua entrega:');
         setTimeout(() => {
             exibirPix(dados.qrCode, dados.qrCodeBase64, dados.valor);
             setTimeout(() => { bannerAguardando(); iniciarPolling(); }, 500);
         }, 400);
-
     } catch (err) {
         const t = document.getElementById('typing'); if (t) t.remove();
         addMsg(
@@ -583,18 +598,15 @@ function cancelar() {
     ]), 600);
 }
 
-// ── Processar input ────────────────────────────────────────
 async function processar(txt) {
     const msg = txt.trim();
     if (!msg || !DIGITAVEIS.has(E.step)) return;
-
     const div = document.createElement('div');
     div.className = 'msg usr';
     div.innerHTML = `<div class="bal">${msg}</div><div class="hr">${hora()}</div>`;
     msgsEl.appendChild(div); msgsEl.scrollTop = msgsEl.scrollHeight;
     await savMsg('user', msg);
     campoEl.value = '';
-
     switch (E.step) {
         case 'nome':      E.nome = msg; pedirWA(); break;
         case 'wa':        E.wa   = msg; atualizarInput(); aposId(); break;
@@ -618,14 +630,12 @@ async function processar(txt) {
     }
 }
 
-// ── Polling ────────────────────────────────────────────────
 function iniciarPolling() { if (pollingAtivo) return; pollingAtivo = true; setInterval(poll, 2500); }
 
 async function poll() {
     const conv = await GET(`/api/conv/${meuId}`);
     if (!conv) return;
     const info = conv.info, msgs = conv.msgs || [];
-
     if (info.atendenteAtivo && !E.atEntrou && E.step === 'espera_at') {
         E.atEntrou = true; E.step = 'livre'; atualizarInput();
         const b = document.getElementById('besp'); if (b) b.remove();
@@ -633,14 +643,12 @@ async function poll() {
         div.innerHTML = `<div class="bal" style="background:#e8f5e9;border-left:3px solid #4caf50;border-bottom-left-radius:4px">✅ <strong>${info.atendenteAtivo}</strong> entrou na conversa! Pode digitar. 😊</div><div class="hr">${hora()}</div>`;
         msgsEl.appendChild(div); msgsEl.scrollTop = msgsEl.scrollHeight;
     }
-
     if (info.pagamentoConfirmado && !E.pagConfirmado) {
         E.pagConfirmado = true; E.step = 'fim'; atualizarInput();
         const b = document.getElementById('bpag'); if (b) b.remove();
         const div = document.createElement('div'); div.className = 'msg bot';
         div.innerHTML = `<div class="bal" style="background:#e8f5e9;border-left:3px solid #4caf50;border-bottom-left-radius:4px">✅ <strong>Pagamento confirmado!</strong><br><br>🚚 Sua entrega foi registrada!<br><br>💚 Obrigado, <strong>${E.nome}</strong>!<br><br>Deseja fazer uma nova solicitação?</div><div class="hr">${hora()}</div>`;
         msgsEl.appendChild(div);
-
         const row = document.createElement('div'); row.className = 'opts';
         const btn = document.createElement('button'); btn.className = 'ob'; btn.textContent = '📦 Nova Solicitação';
         btn.onclick = () => {
@@ -657,7 +665,6 @@ async function poll() {
         row.appendChild(btn); div.appendChild(row);
         msgsEl.scrollTop = msgsEl.scrollHeight;
     }
-
     if (E.atEntrou || info.atendenteAtivo) {
         const atMsgs = msgs.filter(m => m.tipo === 'atendente');
         atMsgs.forEach(m => {
@@ -671,7 +678,6 @@ async function poll() {
     }
 }
 
-// ── Eventos ────────────────────────────────────────────────
 benvEl.addEventListener('click', async () => {
     if (arquivoPend) { await enviarArquivo(); return; }
     const v = campoEl.value.trim(); if (v) await processar(v);

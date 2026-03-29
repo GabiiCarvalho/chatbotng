@@ -11,8 +11,8 @@ const PORT = process.env.PORT || 3000;
 const DB_FILE = path.join(__dirname, 'banco.db');
 
 // ── Mercado Pago ───────────────────────────────────────────
-const MP_ACCESS_TOKEN   = process.env.MP_ACCESS_TOKEN   || 'APP_USR-460981285996431-032818-00692b024b5a6ec3db98a3e0645429d3-1651166060';
-const MP_WEBHOOK_SECRET = process.env.MP_WEBHOOK_SECRET || '06611dddba6e420e383464cb08e693856ff24d9bfd4038b628ceaf41f6872c07';
+const MP_ACCESS_TOKEN   = process.env.MP_ACCESS_TOKEN;
+const MP_WEBHOOK_SECRET = process.env.MP_WEBHOOK_SECRET;
 // ✅ https:// obrigatório — Mercado Pago rejeita webhook sem protocolo
 const BASE_URL = process.env.BASE_URL || 'https://chatbotng-production.up.railway.app';
 
