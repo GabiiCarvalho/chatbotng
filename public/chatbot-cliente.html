@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>N&G Express — Atendimento</title>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 :root{--v:#075e54;--v2:#128c7e;--v3:#25d366;--vc:#dcf8c6;--bg:#f0f2f5;--br:#fff;--cin:#e9edef;--c2:#667781;--tx:#111b21}
@@ -97,6 +98,7 @@ body {
 .cpix-v{font-size:1.6rem;font-weight:800;color:#1b5e20;margin:4px 0 8px}
 .cpix-qr{display:flex;justify-content:center;background:#fff;border-radius:10px;padding:10px;border:1px solid #e0e0e0;margin-bottom:10px}
 .cpix-qr img{width:180px;height:180px}
+.cpix-qr canvas{width:180px;height:180px}
 .cpix-cod{background:#f1f8e9;border:1px dashed #a5d6a7;border-radius:8px;padding:8px 10px;font-size:.62rem;color:#2e7d32;word-break:break-all;cursor:pointer;line-height:1.4}
 .cpix-cod:hover{background:#dcedc8}.cpix-hint{font-size:.6rem;color:#888;text-align:center;margin-top:5px}
 .besp{background:#fff8e1;border:1px solid #ffe082;border-radius:12px;padding:10px 14px;margin:4px 0;font-size:.78rem;color:#795548;text-align:center;line-height:1.5}
@@ -179,6 +181,40 @@ function calcularPreco(distanciaKm, veiculo) {
     const porKm  = PRICING_CONFIG.valorPorKm[v];
     const preco  = km <= limite ? minimo : km * porKm;
     return Math.min(Math.round(preco * 100) / 100, PRICING_CONFIG.valorMaximo);
+}
+
+function gerarPayloadPIX(valor, descricao) {
+    const chavePix = 'comercial.ngexpress@gmail.com';
+    const nomeRecebedor = 'N&G Express';
+    const cidade = 'SAO PAULO';
+    const valorFormatado = valor.toFixed(2).replace('.', '');
+    
+    const payload = `000201` +
+        `26` +
+        `0014br.gov.bcb.pix` +
+        `01${String(chavePix.length).padStart(2, '0')}${chavePix}` +
+        `52040000` +
+        `5303986` +
+        `54${String(valorFormatado.length).padStart(2, '0')}${valorFormatado}` +
+        `5802BR` +
+        `59${String(nomeRecebedor.length).padStart(2, '0')}${nomeRecebedor}` +
+        `60${String(cidade.length).padStart(2, '0')}${cidade}` +
+        `6205${String(descricao.length).padStart(2, '0')}${descricao}` +
+        `6304`;
+    
+    function crc16(str) {
+        let crc = 0xFFFF;
+        for (let i = 0; i < str.length; i++) {
+            crc ^= str.charCodeAt(i) << 8;
+            for (let j = 0; j < 8; j++) {
+                crc = (crc & 0x8000) ? (crc << 1) ^ 0x1021 : crc << 1;
+            }
+        }
+        return (crc & 0xFFFF).toString(16).toUpperCase().padStart(4, '0');
+    }
+    
+    const crc = crc16(payload);
+    return payload + crc;
 }
 
 const _geocodeCache = {};
@@ -347,30 +383,57 @@ async function enviarArquivo() {
 }
 
 function exibirPix(qrCode, qrCodeBase64, valor) {
-    pixStr = qrCode || 'comercial.ngexpress@gmail.com';
+    const payload = gerarPayloadPIX(valor, `Entrega N&G Express #${meuId.slice(-6)}`);
+    pixStr = qrCode || payload;
+    
     const div = document.createElement('div');
     div.className = 'msg bot';
     const w = document.createElement('div');
     
-    const qrContent = qrCodeBase64
-        ? `<div class="cpix-qr"><img src="data:image/png;base64,${qrCodeBase64}" alt="QR Code PIX"></div>`
-        : `<div class="cpix-qr" style="background:#f1f8e9; padding:12px; border-radius:12px;">
-            <div style="text-align:center;">
-                <strong style="color:#2e7d32;">Chave PIX (e-mail):</strong><br>
-                <code style="font-size:14px; word-break:break-all;">comercial.ngexpress@gmail.com</code>
+    if (qrCodeBase64) {
+        w.innerHTML = `<div class="cpix">
+            <div class="cpix-h">
+                <div class="cpix-ic">💚</div>
+                <div><div class="cpix-t">Pagamento via PIX</div><div class="cpix-s">Mercado Pago • Escaneie ou copie</div></div>
             </div>
-           </div>`;
+            <div class="cpix-v">R$ ${parseFloat(valor).toFixed(2).replace('.', ',')}</div>
+            <div class="cpix-qr"><img src="data:image/png;base64,${qrCodeBase64}" alt="QR Code PIX"></div>
+            <div class="cpix-cod" id="pixCod" onclick="copiarPix()">${qrCode}</div>
+            <div class="cpix-hint">👆 Toque no código para copiar</div>
+        </div>`;
+    } else {
+        w.innerHTML = `<div class="cpix">
+            <div class="cpix-h">
+                <div class="cpix-ic">💚</div>
+                <div><div class="cpix-t">Pagamento via PIX</div><div class="cpix-s">Chave: comercial.ngexpress@gmail.com</div></div>
+            </div>
+            <div class="cpix-v">R$ ${parseFloat(valor).toFixed(2).replace('.', ',')}</div>
+            <div id="qrCodeDinamico" style="display:flex; justify-content:center; margin:10px 0;"></div>
+            <div class="cpix-cod" id="pixCod" onclick="copiarPix()">${payload}</div>
+            <div class="cpix-hint">👆 Toque no código para copiar ou escaneie o QR Code</div>
+        </div>`;
+        
+        setTimeout(() => {
+            const qrContainer = document.getElementById('qrCodeDinamico');
+            if (qrContainer && typeof QRCode !== 'undefined') {
+                qrContainer.innerHTML = '';
+                new QRCode(qrContainer, {
+                    text: payload,
+                    width: 180,
+                    height: 180,
+                    colorDark: "#1b5e20",
+                    colorLight: "#ffffff",
+                    correctLevel: QRCode.CorrectLevel.M
+                });
+            } else if (qrContainer) {
+                qrContainer.innerHTML = `<div style="padding:20px; background:#f1f8e9; border-radius:8px; text-align:center;">
+                    <strong>Copie o código abaixo:</strong><br>
+                    <code style="font-size:10px; word-break:break-all;">${payload.substring(0, 80)}...</code>
+                </div>`;
+            }
+        }, 100);
+    }
     
-    w.innerHTML = `<div class="cpix">
-        <div class="cpix-h">
-            <div class="cpix-ic">💚</div>
-            <div><div class="cpix-t">Pagamento via PIX</div><div class="cpix-s">Mercado Pago • Escaneie ou copie</div></div>
-        </div>
-        <div class="cpix-v">R$ ${parseFloat(valor).toFixed(2).replace('.', ',')}</div>
-        ${qrContent}
-        <div class="cpix-cod" id="pixCod" onclick="copiarPix()">${qrCode || 'comercial.ngexpress@gmail.com'}</div>
-        <div class="cpix-hint">👆 Toque no código para copiar</div>
-    </div>`;
     div.appendChild(w);
     const h = document.createElement('div');
     h.className = 'hr'; h.textContent = hora();
@@ -567,34 +630,9 @@ async function confirmarPagar() {
         }, 400);
     } catch (err) {
         const t = document.getElementById('typing'); if (t) t.remove();
-        addMsg('⚠️ Não foi possível gerar o QR Code automaticamente, mas você pode pagar usando a chave PIX abaixo:');
+        addMsg('⚠️ Não foi possível gerar o QR Code automaticamente, mas você pode pagar usando o QR Code abaixo:');
         setTimeout(() => {
-            const valor = E.valor;
-            const chavePix = 'comercial.ngexpress@gmail.com';
-            const div = document.createElement('div');
-            div.className = 'msg bot';
-            div.innerHTML = `
-                <div class="bal">
-                    <div class="cpix" style="border:2px solid #43a047;">
-                        <div class="cpix-h">
-                            <div class="cpix-ic">💚</div>
-                            <div><div class="cpix-t">Pagamento via PIX</div><div class="cpix-s">Mercado Pago</div></div>
-                        </div>
-                        <div class="cpix-v">R$ ${parseFloat(valor).toFixed(2).replace('.', ',')}</div>
-                        <div style="background:#f1f8e9; padding:12px; border-radius:8px; margin:8px 0; text-align:center;">
-                            <strong style="color:#2e7d32;">Chave PIX (e-mail):</strong><br>
-                            <code style="font-size:14px; word-break:break-all;">${chavePix}</code>
-                        </div>
-                        <div class="cpix-cod" onclick="navigator.clipboard?.writeText('${chavePix}')" style="cursor:pointer; text-align:center;">
-                            📋 Clique para copiar a chave
-                        </div>
-                        <div class="cpix-hint">💡 Pague no app do seu banco usando esta chave</div>
-                    </div>
-                </div>
-                <div class="hr">${hora()}</div>
-            `;
-            msgsEl.appendChild(div);
-            msgsEl.scrollTop = msgsEl.scrollHeight;
+            exibirPix(null, null, E.valor);
             bannerAguardando();
             iniciarPolling();
         }, 400);

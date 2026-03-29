@@ -352,11 +352,11 @@ async function abrirChat(id) {
     document.getElementById('ctit').textContent = nome;
     document.getElementById('csub').textContent = `${ut} • WhatsApp: ${wa}`;
     const cards = [];
-    if (c.info?.whatsapp)           cards.push(`<div class="ic"><span>WhatsApp: </span><strong>${c.info.whatsapp}</strong></div>`);
-    if (c.info?.coleta?.cidade)     cards.push(`<div class="ic"><span>Coleta: </span><strong>${c.info.coleta.cidade}</strong>${c.info.coleta.endereco ? `<br><small>${c.info.coleta.endereco}</small>` : ''}</div>`);
-    if (c.info?.entrega?.cidade)    cards.push(`<div class="ic"><span>Entrega: </span><strong>${c.info.entrega.cidade}</strong>${c.info.entrega.endereco ? `<br><small>${c.info.entrega.endereco}</small>` : ''}</div>`);
-    if (c.info?.destinatario?.nome) cards.push(`<div class="ic"><span>Destinatário: </span><strong>${c.info.destinatario.nome}</strong>${c.info.destinatario.tel ? `<br><small>${c.info.destinatario.tel}</small>` : ''}</div>`);
-    if (c.info?.valor)              cards.push(`<div class="ic"><span>Valor: </span><strong style="color:#ffc107">${fmtV(c.info.valor)}</strong> ${c.info.distancia ? `(${c.info.distancia.toFixed(1)} km)` : ''}</div>`);
+    if (c.info?.whatsapp)           cards.push(`<div class="ic"><span>WhatsApp: </span><strong> ${c.info.whatsapp} </strong></div>`);
+    if (c.info?.coleta?.cidade)     cards.push(`<div class="ic"><span>Coleta: </span><strong> ${c.info.coleta.cidade} </strong> ${c.info.coleta.endereco ? `<br><small> ${c.info.coleta.endereco}</small>` : ''}</div>`);
+    if (c.info?.entrega?.cidade)    cards.push(`<div class="ic"><span>Entrega: </span><strong> ${c.info.entrega.cidade} </strong> ${c.info.entrega.endereco ? `<br><small> ${c.info.entrega.endereco}</small>` : ''}</div>`);
+    if (c.info?.destinatario?.nome) cards.push(`<div class="ic"><span>Destinatário: </span><strong> ${c.info.destinatario.nome} </strong> ${c.info.destinatario.tel ? `<br><small> ${c.info.destinatario.tel}</small>` : ''}</div>`);
+    if (c.info?.valor)              cards.push(`<div class="ic"><span>Valor: </span><strong style="color:#ffc107">${fmtV(c.info.valor)} </strong> ${c.info.distancia ? `( ${c.info.distancia.toFixed(1)} km)` : ''}</div>`);
     document.getElementById('icards').innerHTML = cards.join('');
     ENTROU = !!c.info?.atendenteAtivo;
     const clienteAguarda = c.msgs?.some(m => m.tipo === 'user');
