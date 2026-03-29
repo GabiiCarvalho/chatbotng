@@ -20,6 +20,24 @@ const MP_ACCESS_TOKEN   = process.env.MP_ACCESS_TOKEN;
 const MP_WEBHOOK_SECRET = process.env.MP_WEBHOOK_SECRET;
 const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
 
+// Valida se a URL é válida para webhook
+function isValidWebhookUrl(url) {
+    if (!url) return false;
+    try {
+        const parsed = new URL(url);
+        // Mercado Pago exige HTTPS em produção
+        if (process.env.NODE_ENV === 'production' && parsed.protocol !== 'https:') {
+            return false;
+        }
+        return true;
+    } catch (e) {
+        return false;
+    }
+}
+
+const WEBHOOK_URL = isValidWebhookUrl(`${BASE_URL}/api/pix/webhook`) ? `${BASE_URL}/api/pix/webhook` : null;
+console.log('🔗 Webhook URL:', WEBHOOK_URL || '❌ NÃO CONFIGURADO (usando fallback manual)');
+
 app.use(cors({ origin: '*' }));
 app.use(express.json({ limit: '25mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
@@ -295,6 +313,7 @@ app.post('/api/calcular', (req, res) => {
     res.json({ distancia: parseFloat(distancia) || 0, valor: preco, veiculo: veiculo || 'moto' });
 });
 
+// ── PIX — Gerar cobrança no Mercado Pago ──────────────────
 app.post('/api/pix/criar', async (req, res) => {
     const { convId, valor, nomeCliente } = req.body;
     if (!convId || !valor) return res.status(400).json({ erro: 'convId e valor obrigatórios' });
@@ -310,15 +329,43 @@ app.post('/api/pix/criar', async (req, res) => {
                 last_name:  'NGExpress',
                 identification: { type: 'CPF', number: '00000000000' }
             },
-            notification_url:   `${BASE_URL}/api/pix/webhook`,
             external_reference: convId,
         };
+        
+        // Só adiciona webhook se a URL for válida e HTTPS
+        if (WEBHOOK_URL) {
+            mpBody.notification_url = WEBHOOK_URL;
+            console.log('🔗 Webhook configurado:', WEBHOOK_URL);
+        } else {
+            console.log('⚠️ Webhook não configurado (URL inválida ou HTTP)');
+        }
 
         console.log('📤 Criando PIX no MP:', JSON.stringify(mpBody));
         const resp = await mpRequest('POST', '/v1/payments', mpBody);
         console.log('📥 Resposta MP:', resp.status, JSON.stringify(resp.body).slice(0, 300));
 
         if (resp.status !== 201) {
+            // Se o erro for de webhook, tenta novamente sem webhook
+            if (resp.body?.cause?.[0]?.code === 4020 && WEBHOOK_URL) {
+                console.log('⚠️ Erro de webhook, tentando sem notification_url...');
+                delete mpBody.notification_url;
+                const resp2 = await mpRequest('POST', '/v1/payments', mpBody);
+                if (resp2.status === 201) {
+                    const pix2 = resp2.body.point_of_interaction?.transaction_data;
+                    if (pix2?.qr_code) {
+                        rodar(
+                            'UPDATE conversas SET mp_payment_id=?, pix=?, aguard_pag=1, atualizada=? WHERE id=?',
+                            [String(resp2.body.id), pix2.qr_code, agora(), convId]
+                        );
+                        return res.json({
+                            paymentId:    resp2.body.id,
+                            qrCode:       pix2.qr_code,
+                            qrCodeBase64: pix2.qr_code_base64 || null,
+                            valor:        resp2.body.transaction_amount,
+                        });
+                    }
+                }
+            }
             return res.status(502).json({ erro: 'Erro no Mercado Pago', detalhe: resp.body });
         }
 
@@ -343,11 +390,13 @@ app.post('/api/pix/criar', async (req, res) => {
     }
 });
 
+// ── PIX — Webhook do Mercado Pago ─────────────────────────
 app.post('/api/pix/webhook', async (req, res) => {
     res.sendStatus(200);
 
     try {
         const { type, data } = req.body;
+        console.log('📨 Webhook recebido:', type, data?.id);
         if (type !== 'payment' || !data?.id) return;
 
         const resp = await mpRequest('GET', `/v1/payments/${data.id}`, null);
@@ -379,6 +428,7 @@ app.post('/api/pix/webhook', async (req, res) => {
     }
 });
 
+// ── PIX — Consultar status ────────────────────────────────
 app.get('/api/pix/status/:convId', async (req, res) => {
     const c = um('SELECT * FROM conversas WHERE id=?', [req.params.convId]);
     if (!c) return res.status(404).json({ erro: 'não encontrada' });
@@ -392,6 +442,7 @@ app.get('/api/pix/status/:convId', async (req, res) => {
     }
 });
 
+// ── Mensagens ──────────────────────────────────────────────
 app.post('/api/conv/:id/msgs', (req, res) => {
     const { tipo, texto, atendente } = req.body;
     const conv_id = req.params.id;
@@ -406,6 +457,7 @@ app.post('/api/conv/:id/msgs', (req, res) => {
     res.json({ id, ts, ok: true });
 });
 
+// ── Arquivos ───────────────────────────────────────────────
 app.post('/api/conv/:id/arq', (req, res) => {
     const { nome, mime, dados } = req.body;
     if (!dados) return res.status(400).json({ erro: 'dados obrigatório' });
@@ -420,6 +472,7 @@ app.get('/api/conv/:id/arq', (req, res) => {
     res.json(todos('SELECT * FROM arquivos WHERE conv_id=? ORDER BY ts ASC', [req.params.id]));
 });
 
+// ── Health ─────────────────────────────────────────────────
 app.get('/api/health', (req, res) => {
     const nc = um('SELECT COUNT(*) as c FROM conversas');
     const nm = um('SELECT COUNT(*) as c FROM msgs');
@@ -431,6 +484,7 @@ app.get('/api/health', (req, res) => {
     });
 });
 
+// ── Iniciar ────────────────────────────────────────────────
 abrirBanco().then(() => {
     app.listen(PORT, () => {
         console.log('');
@@ -438,7 +492,7 @@ abrirBanco().then(() => {
         console.log(`📡 http://localhost:${PORT}`);
         console.log(`👤 Cliente: http://localhost:${PORT}/`);
         console.log(`👩‍💼 Painel:  http://localhost:${PORT}/painel`);
-        console.log(`💳 Webhook: ${BASE_URL}/api/pix/webhook`);
+        console.log(`💳 Webhook: ${WEBHOOK_URL || '❌ NÃO CONFIGURADO (fallback manual)'}`);
         console.log('');
     });
 });
