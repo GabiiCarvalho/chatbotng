@@ -1,3 +1,5 @@
+require('dotenv').config();
+
 const express = require('express');
 const cors    = require('cors');
 const path    = require('path');
@@ -6,40 +8,36 @@ const https   = require('https');
 const { v4: uuid } = require('uuid');
 const initSql = require('sql.js');
 
+console.log('🔑 MP_ACCESS_TOKEN:', process.env.MP_ACCESS_TOKEN ? '✅ Configurado' : '❌ NÃO CONFIGURADO');
+console.log('🔐 MP_WEBHOOK_SECRET:', process.env.MP_WEBHOOK_SECRET ? '✅ Configurado' : '❌ NÃO CONFIGURADO');
+console.log('🌐 BASE_URL:', process.env.BASE_URL || 'http://localhost:3000');
+
 const app  = express();
 const PORT = process.env.PORT || 3000;
 const DB_FILE = path.join(__dirname, 'banco.db');
 
-// ── Mercado Pago ───────────────────────────────────────────
 const MP_ACCESS_TOKEN   = process.env.MP_ACCESS_TOKEN;
 const MP_WEBHOOK_SECRET = process.env.MP_WEBHOOK_SECRET;
-// ✅ https:// obrigatório — Mercado Pago rejeita webhook sem protocolo
-const BASE_URL = process.env.BASE_URL || 'https://chatbotng-production.up.railway.app';
+const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
 
 app.use(cors({ origin: '*' }));
 app.use(express.json({ limit: '25mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-// ── Configuração de preços ─────────────────────────────────
 const PRICING_CONFIG = {
     valorMinimoAte7km: { moto: 15.00 },
     valorPorKm:        { moto: 1.80 },
     limiteKmMinimo:    7
 };
 
-
-//-- URL-----------------------------------
-// Raiz → chatbot do cliente
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'chatbot-cliente.html'));
 });
 
-// /painel → painel dos atendentes
 app.get('/painel', (req, res) => {
     res.sendFile(path.join(__dirname, 'public', 'painel-atendentes.html'));
 });
 
-// ── Banco ──────────────────────────────────────────────────
 let DB;
 
 async function abrirBanco() {
@@ -76,7 +74,6 @@ async function abrirBanco() {
         atualizada INTEGER
     )`);
 
-    // Migração: garante que todas as colunas existem em bancos antigos
     const migracoes = [
         `ALTER TABLE conversas ADD COLUMN mp_payment_id TEXT DEFAULT ''`,
         `ALTER TABLE conversas ADD COLUMN distancia_km REAL DEFAULT 0`,
@@ -97,7 +94,7 @@ async function abrirBanco() {
         `ALTER TABLE conversas ADD COLUMN ultima TEXT DEFAULT ''`,
     ];
     for (const sql of migracoes) {
-        try { DB.run(sql); } catch (_) { /* coluna já existe, ignora */ }
+        try { DB.run(sql); } catch (_) { }
     }
 
     DB.run(`CREATE TABLE IF NOT EXISTS msgs (
@@ -182,7 +179,6 @@ function montar(c) {
     };
 }
 
-// ── Helper Mercado Pago ────────────────────────────────────
 function mpRequest(method, endpoint, body) {
     return new Promise((resolve, reject) => {
         const data = body ? JSON.stringify(body) : null;
@@ -211,11 +207,6 @@ function mpRequest(method, endpoint, body) {
     });
 }
 
-// ══════════════════════════════════════════════════════════
-// ROTAS
-// ══════════════════════════════════════════════════════════
-
-// Criar conversa
 app.post('/api/conv', (req, res) => {
     const { id } = req.body;
     if (!id) return res.status(400).json({ erro: 'id obrigatório' });
@@ -227,20 +218,17 @@ app.post('/api/conv', (req, res) => {
     res.json(montar(c));
 });
 
-// Buscar conversa
 app.get('/api/conv/:id', (req, res) => {
     const c = um('SELECT * FROM conversas WHERE id=?', [req.params.id]);
     if (!c) return res.status(404).json({ erro: 'não encontrada' });
     res.json(montar(c));
 });
 
-// Listar todas
 app.get('/api/conv', (req, res) => {
     const lista = todos('SELECT * FROM conversas WHERE arquivada=0 ORDER BY atualizada DESC');
     res.json(lista.map(montar));
 });
 
-// Atualizar conversa
 app.patch('/api/conv/:id', (req, res) => {
     const { id } = req.params;
     const b = req.body;
@@ -281,7 +269,6 @@ app.patch('/api/conv/:id', (req, res) => {
     res.json(montar(um('SELECT * FROM conversas WHERE id=?', [id])));
 });
 
-// Deletar conversa
 app.delete('/api/conv/:id', (req, res) => {
     const id = req.params.id;
     rodar('DELETE FROM msgs      WHERE conv_id=?', [id]);
@@ -290,7 +277,6 @@ app.delete('/api/conv/:id', (req, res) => {
     res.json({ ok: true });
 });
 
-// Histórico do cliente
 app.get('/api/historico', (req, res) => {
     const { nome, whatsapp, excluir } = req.query;
     if (!nome || !whatsapp) return res.json(null);
@@ -303,14 +289,12 @@ app.get('/api/historico', (req, res) => {
     res.json(match ? montar(match) : null);
 });
 
-// Calcular preço
 app.post('/api/calcular', (req, res) => {
     const { distancia, veiculo } = req.body;
     const preco = calcularPreco(parseFloat(distancia) || 0, veiculo || 'moto');
     res.json({ distancia: parseFloat(distancia) || 0, valor: preco, veiculo: veiculo || 'moto' });
 });
 
-// ── PIX — Gerar cobrança no Mercado Pago ──────────────────
 app.post('/api/pix/criar', async (req, res) => {
     const { convId, valor, nomeCliente } = req.body;
     if (!convId || !valor) return res.status(400).json({ erro: 'convId e valor obrigatórios' });
@@ -359,7 +343,6 @@ app.post('/api/pix/criar', async (req, res) => {
     }
 });
 
-// ── PIX — Webhook do Mercado Pago ─────────────────────────
 app.post('/api/pix/webhook', async (req, res) => {
     res.sendStatus(200);
 
@@ -396,7 +379,6 @@ app.post('/api/pix/webhook', async (req, res) => {
     }
 });
 
-// ── PIX — Consultar status ────────────────────────────────
 app.get('/api/pix/status/:convId', async (req, res) => {
     const c = um('SELECT * FROM conversas WHERE id=?', [req.params.convId]);
     if (!c) return res.status(404).json({ erro: 'não encontrada' });
@@ -410,7 +392,6 @@ app.get('/api/pix/status/:convId', async (req, res) => {
     }
 });
 
-// ── Mensagens ──────────────────────────────────────────────
 app.post('/api/conv/:id/msgs', (req, res) => {
     const { tipo, texto, atendente } = req.body;
     const conv_id = req.params.id;
@@ -425,7 +406,6 @@ app.post('/api/conv/:id/msgs', (req, res) => {
     res.json({ id, ts, ok: true });
 });
 
-// ── Arquivos ───────────────────────────────────────────────
 app.post('/api/conv/:id/arq', (req, res) => {
     const { nome, mime, dados } = req.body;
     if (!dados) return res.status(400).json({ erro: 'dados obrigatório' });
@@ -440,7 +420,6 @@ app.get('/api/conv/:id/arq', (req, res) => {
     res.json(todos('SELECT * FROM arquivos WHERE conv_id=? ORDER BY ts ASC', [req.params.id]));
 });
 
-// ── Health ─────────────────────────────────────────────────
 app.get('/api/health', (req, res) => {
     const nc = um('SELECT COUNT(*) as c FROM conversas');
     const nm = um('SELECT COUNT(*) as c FROM msgs');
@@ -452,14 +431,13 @@ app.get('/api/health', (req, res) => {
     });
 });
 
-// ── Iniciar ────────────────────────────────────────────────
 abrirBanco().then(() => {
     app.listen(PORT, () => {
         console.log('');
         console.log('🚚 N&G Express rodando!');
         console.log(`📡 http://localhost:${PORT}`);
-        console.log(`👤 Cliente: http://localhost:${PORT}/chatbot-cliente.html`);
-        console.log(`👩‍💼 Painel:  http://localhost:${PORT}/painel-atendentes.html`);
+        console.log(`👤 Cliente: http://localhost:${PORT}/`);
+        console.log(`👩‍💼 Painel:  http://localhost:${PORT}/painel`);
         console.log(`💳 Webhook: ${BASE_URL}/api/pix/webhook`);
         console.log('');
     });

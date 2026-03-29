@@ -99,33 +99,18 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
 .cthumb img{width:64px;height:64px;object-fit:cover;display:block}
 .cthumb div{font-size:.58rem;color:var(--mt);padding:2px 4px;background:var(--card);text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:64px}
 .cmsg{flex:1;overflow-y:auto;padding:14px 16px;display:flex;flex-direction:column;gap:6px}
-
-/* ── Mensagens ── */
 .mp{ display:flex; flex-direction:column; width:100%; animation:su .2s ease; }
 @keyframes su{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
-
-/* Cliente → esquerda */
 .mbot{ align-items:flex-start; }
 .musr{ align-items:flex-start; }
-
-/* Atendente e Bot → direita */
 .mat{ align-items:flex-end; }
-
 .bp{ max-width:min(72%,460px); padding:8px 12px; border-radius:14px; font-size:.82rem; line-height:1.5; word-break:break-word; }
-
-/* Balão cliente (user) — verde escuro, esquerda */
 .musr .bp{ background:#1a3328; color:#8fd4a8; border-bottom-left-radius:4px; }
-
-/* Balão bot/atendente — verde WhatsApp, direita */
 .mat  .bp{ background:var(--v); color:#fff; border-bottom-right-radius:4px; }
-
 .hp  { font-size:.58rem; color:var(--mt); margin-top:3px; padding:0 2px; }
-
-/* Rótulos de remetente */
 .lusr { font-size:.58rem; color:var(--v3);  margin-bottom:2px; padding:0 2px; font-weight:600; }
 .lat2 { font-size:.58rem; color:#82c8f0;    margin-bottom:2px; padding:0 2px; font-weight:600; }
 .lbot { font-size:.58rem; color:#82c8f0;    margin-bottom:2px; padding:0 2px; font-weight:600; }
-
 .imgmsg{max-width:min(200px,100%);max-height:160px;object-fit:cover;border-radius:10px;cursor:pointer;display:block;margin-top:4px}
 .ci{background:var(--pan);border-top:1px solid var(--brd);padding:10px 14px;display:flex;gap:8px;align-items:flex-end;flex-shrink:0}
 .cp{flex:1;background:var(--card);border:1px solid var(--brd);border-radius:11px;padding:9px 13px;color:var(--tx);font-family:'Plus Jakarta Sans',sans-serif;font-size:.85rem;outline:none;resize:none;min-height:40px;max-height:120px;line-height:1.4;transition:border .2s}
@@ -222,7 +207,7 @@ body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(-
               <div class="bpixinfo"><strong>💳 Aguardando confirmação PIX</strong><span>Verifique o recebimento antes de confirmar</span></div>
               <div class="bpixval" id="pval">—</div>
             </div>
-            <div class="bpixdad"><strong>TRANSPOCRED</strong><br>CNPJ: 24.723.159/0001-00<br>Banco Ailos (085) • Ag: 0108-2 • CC: 2092835-1<br>Chave PIX: 24723159000100</div>
+            <div class="bpixdad"><strong>MERCADO PAGO</strong><br>Chave PIX (e-mail): <strong style="color:#ffc107">comercial.ngexpress@gmail.com</strong><br>Tipo de chave: E-mail<br><small style="color:#7a9bb5">⚠️ Confirme o pagamento no app do Mercado Pago antes de clicar em "Confirmar"</small></div>
             <button class="bconf" id="bconf" onclick="confPag()">✅ Confirmar recebimento do pagamento</button>
           </div>
           <div class="comps" id="comps" style="display:none">
@@ -439,65 +424,23 @@ function fechaChat() {
     document.getElementById('chatOpen').style.display = 'none';
 }
 
-// ── renderMsgs ─────────────────────────────────────────────
-// Cliente (user / user_img) → ESQUERDA (verde escuro)
-// Bot + Atendente           → DIREITA  (verde WhatsApp)
 function renderMsgs(c) {
     const nc = c.info?.nome || 'Cliente';
     const el = document.getElementById('cmsg');
 
     el.innerHTML = (c.msgs || []).map(m => {
         const h = fmtH(m.ts);
-
-        // ── Atendente humano → direita ──
         if (m.tipo === 'atendente') {
-            return `
-            <div class="mp mat">
-                <div class="lat2">${m.atendente || AT}</div>
-                <div class="bp">${m.texto}</div>
-                <div class="hp">${h}</div>
-            </div>`;
+            return `<div class="mp mat"><div class="lat2">${m.atendente || AT}</div><div class="bp">${m.texto}</div><div class="hp">${h}</div></div>`;
         }
-
-        // ── Bot automático → direita ──
         if (m.tipo === 'bot') {
-            return `
-            <div class="mp mat">
-                <div class="lbot">Bot</div>
-                <div class="bp">${m.texto}</div>
-                <div class="hp">${h}</div>
-            </div>`;
+            return `<div class="mp mat"><div class="lbot">Bot</div><div class="bp">${m.texto}</div><div class="hp">${h}</div></div>`;
         }
-
-        // ── Cliente (texto) → esquerda ──
-        if (m.tipo === 'user') {
-            return `
-            <div class="mp musr">
-                <div class="lusr">${nc}</div>
-                <div class="bp">${m.texto}</div>
-                <div class="hp">${h}</div>
-            </div>`;
+        if (m.tipo === 'user' || m.tipo === 'user_img') {
+            return `<div class="mp musr"><div class="lusr">${nc}</div><div class="bp">${m.texto}</div><div class="hp">${h}</div></div>`;
         }
-
-        // ── Cliente (imagem/comprovante) → esquerda ──
-        if (m.tipo === 'user_img') {
-            return `
-            <div class="mp musr">
-                <div class="lusr">${nc}</div>
-                <div class="bp">${m.texto}</div>
-                <div class="hp">${h}</div>
-            </div>`;
-        }
-
-        // fallback — esquerda
-        return `
-        <div class="mp musr">
-            <div class="lusr">${nc}</div>
-            <div class="bp">${m.texto}</div>
-            <div class="hp">${h}</div>
-        </div>`;
+        return `<div class="mp musr"><div class="lusr">${nc}</div><div class="bp">${m.texto}</div><div class="hp">${h}</div></div>`;
     }).join('');
-
     el.scrollTop = el.scrollHeight;
 }
 

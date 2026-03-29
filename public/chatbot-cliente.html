@@ -9,7 +9,6 @@
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 :root{--v:#075e54;--v2:#128c7e;--v3:#25d366;--vc:#dcf8c6;--bg:#f0f2f5;--br:#fff;--cin:#e9edef;--c2:#667781;--tx:#111b21}
 
-/* ── Tela cheia — igual ao painel ── */
 html, body {
     height: 100%;
     margin: 0;
@@ -32,9 +31,8 @@ body {
     flex-direction: column;
     overflow: hidden;
     position: relative;
-    /* ocupa exatamente a altura da viewport */
     height: 100vh;
-    height: 100dvh; /* suporte a mobile com barra de endereço retrátil */
+    height: 100dvh;
 }
 
 @media(min-width: 768px) {
@@ -44,7 +42,6 @@ body {
 
 .tela::before{content:'';position:absolute;inset:0;background-image:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none'%3E%3Cg fill='%23075e54' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");pointer-events:none;z-index:0}
 
-/* ── Header fixo no topo ── */
 .hd{background:var(--v);padding:12px 20px;display:flex;align-items:center;gap:12px;position:relative;z-index:10;box-shadow:0 2px 8px rgba(0,0,0,.2);flex-shrink:0}
 .av{width:42px;height:42px;border-radius:50%;background:var(--v2);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
 .hd h3{color:#fff;font-size:.95rem;font-weight:700}
@@ -53,7 +50,6 @@ body {
 .dot{width:6px;height:6px;border-radius:50%;background:#fff;animation:p 2s infinite}
 @keyframes p{0%,100%{opacity:1}50%{opacity:.4}}
 
-/* ── Área de mensagens — ocupa o espaço restante ── */
 .msgs{
     flex: 1;
     overflow-y: auto;
@@ -64,7 +60,6 @@ body {
     position: relative;
     z-index: 1;
     background: var(--bg);
-    /* impede que o conteúdo empurre a tela para fora */
     min-height: 0;
 }
 
@@ -83,9 +78,7 @@ body {
 .typing span:nth-child(2){animation-delay:.2s}.typing span:nth-child(3){animation-delay:.4s}
 @keyframes b{0%,60%,100%{transform:translateY(0);opacity:.4}30%{transform:translateY(-7px);opacity:1}}
 
-/* ── Barra de input fixada na base ── */
 .ia{background:var(--cin);padding:10px 12px;display:flex;align-items:center;gap:8px;position:relative;z-index:10;flex-shrink:0;
-    /* safe-area no iPhone com notch/home bar */
     padding-bottom: calc(10px + env(safe-area-inset-bottom));
 }
 .campo{flex:1;background:var(--br);border:none;border-radius:24px;padding:10px 16px;font-size:.9rem;font-family:'Plus Jakarta Sans',sans-serif;outline:none;color:var(--tx);min-width:0}
@@ -97,7 +90,6 @@ body {
 .benv:hover{background:var(--v2)}.benv:disabled{background:#aaa;cursor:not-allowed}
 .imgp{max-width:100%;max-height:200px;border-radius:12px;object-fit:cover;cursor:pointer;display:block;margin-top:4px}
 
-/* ── Card PIX ── */
 .cpix{background:#fff;border-radius:16px;padding:16px;box-shadow:0 2px 16px rgba(0,0,0,.12);border:2px solid #43a047;width:100%}
 .cpix-h{display:flex;align-items:center;gap:8px;margin-bottom:8px}
 .cpix-ic{width:32px;height:32px;background:#e8f5e9;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
@@ -116,7 +108,6 @@ body {
 .pdots i:nth-child(2){animation-delay:.2s}.pdots i:nth-child(3){animation-delay:.4s}
 @keyframes pd{0%,60%,100%{transform:scale(.6);opacity:.4}30%{transform:scale(1);opacity:1}}
 
-/* ── Preview de upload ── */
 .prev-up{position:absolute;bottom:68px;left:12px;right:12px;background:#fff;border-radius:12px;padding:10px 12px;display:flex;align-items:center;gap:10px;box-shadow:0 4px 20px rgba(0,0,0,.15);border:1px solid #e0e0e0;z-index:20}
 .prev-up img{width:52px;height:52px;object-fit:cover;border-radius:8px;flex-shrink:0}
 .prev-info{flex:1;min-width:0}
@@ -124,7 +115,6 @@ body {
 .prev-tipo{font-size:.65rem;color:var(--c2);margin-top:2px}
 .prev-x{background:none;border:none;color:var(--c2);cursor:pointer;font-size:18px;flex-shrink:0}
 
-/* ── Lightbox ── */
 .lb{position:fixed;inset:0;background:rgba(0,0,0,.88);display:flex;align-items:center;justify-content:center;z-index:999;padding:20px}
 .lb img{max-width:100%;max-height:90vh;border-radius:12px;object-fit:contain}
 .lb-x{position:absolute;top:16px;right:16px;background:rgba(255,255,255,.15);border:none;color:#fff;font-size:22px;cursor:pointer;width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center}
@@ -154,7 +144,6 @@ body {
   <button class="lb-x">✕</button><img id="lbImg" src="" alt="">
 </div>
 <script>
-// ── Configurações ──────────────────────────────────────────
 const HERE_API_KEY = 'O8E5nipilq9UhVMoh75UR3RxE0J3zvC1DCXR-DZVL6I';
 
 const PRICING_CONFIG = {
@@ -164,7 +153,6 @@ const PRICING_CONFIG = {
     valorMaximo:       500.00
 };
 
-// ── Sessão ─────────────────────────────────────────────────
 let meuId = localStorage.getItem('ngid');
 if (!meuId) {
     meuId = 'c' + Date.now() + Math.random().toString(36).slice(2, 6);
@@ -183,7 +171,6 @@ let E = {
 };
 let arquivoPend = null, pollingAtivo = false, ultimaMsgAtId = '', pixStr = '';
 
-// ── Cálculo de preço ───────────────────────────────────────
 function calcularPreco(distanciaKm, veiculo) {
     const km     = parseFloat(distanciaKm) || 0;
     const v      = veiculo || 'moto';
@@ -194,7 +181,6 @@ function calcularPreco(distanciaKm, veiculo) {
     return Math.min(Math.round(preco * 100) / 100, PRICING_CONFIG.valorMaximo);
 }
 
-// ── Geocodificação via Nominatim ───────────────────────────
 const _geocodeCache = {};
 async function geocodificar(endereco) {
     const key = `gc_${endereco}`;
@@ -209,7 +195,6 @@ async function geocodificar(endereco) {
     return resultado;
 }
 
-// ── Rota real via HERE Maps ────────────────────────────────
 async function calcularRotaHere(origem, destino) {
     const url = `https://router.hereapi.com/v8/routes?transportMode=car&origin=${origem.lat},${origem.lng}&destination=${destino.lat},${destino.lng}&return=summary&apikey=${HERE_API_KEY}`;
     const res  = await fetch(url);
@@ -226,7 +211,6 @@ async function calcularRotaHere(origem, destino) {
     };
 }
 
-// ── API interna ────────────────────────────────────────────
 async function api(m, r, b) {
     try {
         const o = { method: m, headers: { 'Content-Type': 'application/json' } };
@@ -241,7 +225,6 @@ const PATCH    = (r, b) => api('PATCH', r, b);
 const savMsg   = (tipo, texto, at) => POST(`/api/conv/${meuId}/msgs`, { tipo, texto, atendente: at || '' });
 const saveConv = d => PATCH(`/api/conv/${meuId}`, d);
 
-// ── DOM helpers ────────────────────────────────────────────
 const msgsEl  = document.getElementById('msgs');
 const campoEl = document.getElementById('campo');
 const benvEl  = document.getElementById('benv');
@@ -329,7 +312,6 @@ function fecharLB()   { document.getElementById('lb').style.display = 'none'; }
 document.querySelector('.lb-x')?.addEventListener('click', fecharLB);
 document.getElementById('lb')?.addEventListener('click', e => { if (e.target === document.getElementById('lb')) fecharLB(); });
 
-// ── Upload ─────────────────────────────────────────────────
 document.getElementById('finp').addEventListener('change', e => {
     const f = e.target.files[0];
     if (!f) return;
@@ -364,23 +346,29 @@ async function enviarArquivo() {
     typing(() => addMsg('📎 Comprovante recebido! O atendente irá verificar em breve.'), 800);
 }
 
-// ── PIX display ────────────────────────────────────────────
 function exibirPix(qrCode, qrCodeBase64, valor) {
-    pixStr = qrCode;
+    pixStr = qrCode || 'comercial.ngexpress@gmail.com';
     const div = document.createElement('div');
     div.className = 'msg bot';
     const w = document.createElement('div');
-    const qrImgHtml = qrCodeBase64
+    
+    const qrContent = qrCodeBase64
         ? `<div class="cpix-qr"><img src="data:image/png;base64,${qrCodeBase64}" alt="QR Code PIX"></div>`
-        : `<div class="cpix-qr" id="qrW"></div>`;
+        : `<div class="cpix-qr" style="background:#f1f8e9; padding:12px; border-radius:12px;">
+            <div style="text-align:center;">
+                <strong style="color:#2e7d32;">Chave PIX (e-mail):</strong><br>
+                <code style="font-size:14px; word-break:break-all;">comercial.ngexpress@gmail.com</code>
+            </div>
+           </div>`;
+    
     w.innerHTML = `<div class="cpix">
         <div class="cpix-h">
             <div class="cpix-ic">💚</div>
             <div><div class="cpix-t">Pagamento via PIX</div><div class="cpix-s">Mercado Pago • Escaneie ou copie</div></div>
         </div>
         <div class="cpix-v">R$ ${parseFloat(valor).toFixed(2).replace('.', ',')}</div>
-        ${qrImgHtml}
-        <div class="cpix-cod" id="pixCod" onclick="copiarPix()">${qrCode}</div>
+        ${qrContent}
+        <div class="cpix-cod" id="pixCod" onclick="copiarPix()">${qrCode || 'comercial.ngexpress@gmail.com'}</div>
         <div class="cpix-hint">👆 Toque no código para copiar</div>
     </div>`;
     div.appendChild(w);
@@ -409,7 +397,6 @@ function bannerAguardando() {
     msgsEl.scrollTop = msgsEl.scrollHeight;
 }
 
-// ── FLUXO ──────────────────────────────────────────────────
 async function iniciar() {
     await POST('/api/conv', { id: meuId });
     E.step = 'nome'; atualizarInput();
@@ -580,10 +567,37 @@ async function confirmarPagar() {
         }, 400);
     } catch (err) {
         const t = document.getElementById('typing'); if (t) t.remove();
-        addMsg(
-            `⚠️ Não foi possível gerar o PIX agora.<br><br><small style="color:#667781">${err.message}</small><br><br>Entre em contato com o atendente para finalizar o pagamento.`,
-            'bot', [{ t: '💬 Falar com Atendente', fn: falarAt }]
-        );
+        addMsg('⚠️ Não foi possível gerar o QR Code automaticamente, mas você pode pagar usando a chave PIX abaixo:');
+        setTimeout(() => {
+            const valor = E.valor;
+            const chavePix = 'comercial.ngexpress@gmail.com';
+            const div = document.createElement('div');
+            div.className = 'msg bot';
+            div.innerHTML = `
+                <div class="bal">
+                    <div class="cpix" style="border:2px solid #43a047;">
+                        <div class="cpix-h">
+                            <div class="cpix-ic">💚</div>
+                            <div><div class="cpix-t">Pagamento via PIX</div><div class="cpix-s">Mercado Pago</div></div>
+                        </div>
+                        <div class="cpix-v">R$ ${parseFloat(valor).toFixed(2).replace('.', ',')}</div>
+                        <div style="background:#f1f8e9; padding:12px; border-radius:8px; margin:8px 0; text-align:center;">
+                            <strong style="color:#2e7d32;">Chave PIX (e-mail):</strong><br>
+                            <code style="font-size:14px; word-break:break-all;">${chavePix}</code>
+                        </div>
+                        <div class="cpix-cod" onclick="navigator.clipboard?.writeText('${chavePix}')" style="cursor:pointer; text-align:center;">
+                            📋 Clique para copiar a chave
+                        </div>
+                        <div class="cpix-hint">💡 Pague no app do seu banco usando esta chave</div>
+                    </div>
+                </div>
+                <div class="hr">${hora()}</div>
+            `;
+            msgsEl.appendChild(div);
+            msgsEl.scrollTop = msgsEl.scrollHeight;
+            bannerAguardando();
+            iniciarPolling();
+        }, 400);
         E.step = 'menu_cli'; atualizarInput();
     }
 }
